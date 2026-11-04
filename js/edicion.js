@@ -18,7 +18,12 @@ function redo(){ const h=H(); if(!h.r.length) return; h.u.push(snap()); restore(
 function clampSel(){ ed.cs=Math.max(-1,Math.min(ed.cs,P.chords.length-1)); ed.ns=Math.max(-1,Math.min(ed.ns,P.notes.length-1)); }
 const selC=()=>ed.cs>=0?P.chords[ed.cs]:null;
 const selN=()=>ed.ns>=0?P.notes[ed.ns]:null;
-function toggleDot(d){ if(DOTTED.includes(d)) return d/1.5; if(BASES.includes(d)&&d!==3) return d*1.5; return d; }
+// Duraciones por defecto al abrir una página o cambiar de compás: acordes de un compás; notas de un pulso (negra, o negra con puntillo en compuesto)
+function meterDefaults(){ const comp=isCompound(P.sig); ed.cdot=ed.ndot=comp; ed.cdur=SIGS[P.sig].L; ed.ndur=comp?18:12; }
+// Al elegir un acorde o una nota, el puntillo sigue a su figura (salvo un compás entero o una semicorchea, que no dicen nada del puntillo)
+function syncDot(kind){ const it=kind==='c'?selC():selN(); if(!it||!isFig(it.d)||it.d===SIGS[P.sig].L||it.d===3) return; ed[kind==='c'?'cdot':'ndot']=DOTTED.includes(it.d); }
+const dotApply=(d,on)=>isFig(d)?withDot(baseOf(d),on):d;
+const dotSay=(on,d)=>(on?'Puntillo activado':'Puntillo desactivado')+(d?`: ${FIGNAME[d]||beatsSay(d)}`:'');
 
 function insertChord(c){ change(()=>{ c.d=c.d||ed.cdur; P.chords.splice(ed.cs+1,0,c); ed.cs++; },()=>`Añadido ${chordSay(c)}`); }
 function rootTap(r){
@@ -32,18 +37,25 @@ function chordAcc(a){ const c=selC(); if(!c||c.nc) return; change(()=>{ if(ed.ac
 function chordQual(q){ const c=selC(); if(!c||c.nc) return; change(()=>{ keepInv(c,()=>{ c.q=q; }); },()=>chordSay(c)); }
 function chordInv(k){ const c=selC(); if(!c||c.nc) return; if(k>0&&!invBass(c,k)) return; change(()=>{ setInv(c,k); ed.accTo='root'; ed.bassMode=false; },()=>chordSay(c)); }
 function chordDur(d){ const c=selC(); ed.cdur=d; if(!c){ renderPalette(); return; } change(()=>{ c.d=d; },()=>`${chordSay(c)}, ${beatsSay(d)}`); }
-function chordDot(){ const c=selC(); if(!c){ ed.cdur=toggleDot(ed.cdur); renderPalette(); return; } const d=toggleDot(c.d); if(d===c.d) return; change(()=>{ c.d=d; ed.cdur=d; },()=>beatsSay(d)); }
+function chordFig(base){ chordDur(withDot(base,ed.cdot)); }
+function chordDot(){ ed.cdot=!ed.cdot; const c=selC();
+  if(!c){ ed.cdur=dotApply(ed.cdur,ed.cdot); renderPalette(); say(dotSay(ed.cdot)); return; }
+  const d=dotApply(c.d,ed.cdot); if(d===c.d){ renderPalette(); say(dotSay(ed.cdot)); return; }
+  change(()=>{ c.d=d; ed.cdur=d; },()=>`${dotSay(ed.cdot)}, ${beatsSay(d)}`); }
 function delChord(){ if(ed.cs<0) return; const c=selC(); change(()=>{ P.chords.splice(ed.cs,1); ed.cs--; },()=>`Borrado ${chordSay(c)}`); }
 function chordSemi(dir){ const c=selC(); if(!c||c.nc) return;
   change(()=>{ const k=invOf(c); const n=semiShift(c.r,c.a,dir); c.r=n.r; c.a=n.a;
     if(k>0) setInv(c,k); else if(c.b){ const b=semiShift(c.b.r,c.b.a,dir); c.b={r:b.r,a:b.a}; } },()=>chordSay(c)); }
-function selectChord(i,focus){ ed.cs=Math.max(-1,Math.min(i,P.chords.length-1)); ed.bassMode=false; ed.accTo='root'; markGrid(); renderPalette(); renderSelLine(); if(focus) focusSel(); }
+function selectChord(i,focus){ ed.cs=Math.max(-1,Math.min(i,P.chords.length-1)); ed.bassMode=false; ed.accTo='root'; syncDot('c'); markGrid(); renderPalette(); renderSelLine(); if(focus) focusSel(); }
 
 function noteRef(){ const n=selN()||P.notes.slice().reverse().find(x=>!x.rest); return n?n.s:34; }
 function insertNote(n,at){ change(()=>{ const i=at==null?ed.ns+1:at; P.notes.splice(i,0,n); ed.ns=i; },()=>n.rest?`Silencio de ${FIGNAME[n.d]}`:`${noteSay(n.s,n.a)}, ${FIGNAME[n.d]}`); }
 function noteByLetter(r){ const ref=noteRef(); let best=null; for(let o=1;o<=7;o++){ const s=o*7+r; if(s<23||s>46) continue; if(best===null||Math.abs(s-ref)<Math.abs(best-ref)) best=s; } insertNote({s:best,a:keyAlter(KEYMAP[P.key],r),d:ed.ndur,rest:false,tie:false}); }
-function noteFig(d){ const n=selN(); ed.ndur=d; if(!n){ renderPalette(); return; } change(()=>{ n.d=d; },()=>FIGNAME[d]); }
-function noteDot(){ const n=selN(); if(!n){ ed.ndur=toggleDot(ed.ndur); renderPalette(); return; } const d=toggleDot(n.d); if(d===n.d) return; change(()=>{ n.d=d; ed.ndur=d; },()=>FIGNAME[d]); }
+function noteFig(base){ const d=withDot(base,ed.ndot); const n=selN(); ed.ndur=d; if(!n){ renderPalette(); return; } change(()=>{ n.d=d; },()=>FIGNAME[d]); }
+function noteDot(){ ed.ndot=!ed.ndot; const n=selN();
+  if(!n){ ed.ndur=dotApply(ed.ndur,ed.ndot); renderPalette(); say(dotSay(ed.ndot)); return; }
+  const d=dotApply(n.d,ed.ndot); if(d===n.d){ renderPalette(); say(dotSay(ed.ndot)); return; }
+  change(()=>{ n.d=d; ed.ndur=d; },()=>dotSay(ed.ndot,d)); }
 function noteRest(){ const n=selN(); if(!n) return; change(()=>{ n.rest=!n.rest; if(n.rest) n.tie=false; },()=>n.rest?'Silencio':noteSay(n.s,n.a)); }
 function noteTie(){ const n=selN(); if(!n||n.rest) return;
   change(()=>{ if(n.tie){ n.tie=false; return; } const nx=P.notes[ed.ns+1];
@@ -55,7 +67,7 @@ function noteAcc(a){ const n=selN(); if(!n||n.rest) return; change(()=>{ n.a=a; 
 function noteAlter(v){ const n=selN(); if(!n||n.rest) return; const a=n.a+v; if(a<-2||a>2) return; change(()=>{ n.a=a; fixTies(); },()=>noteSay(n.s,n.a)); }
 function fixTies(){ for(let i=0;i<P.notes.length-1;i++){ const n=P.notes[i], nx=P.notes[i+1]; if(n.tie&&!n.rest&&!nx.rest){ nx.s=n.s; nx.a=n.a; } } } // las ligadas siguen a la primera
 function delNote(){ if(ed.ns<0) return; change(()=>{ P.notes.splice(ed.ns,1); if(ed.ns>0&&P.notes[ed.ns-1]&&!P.notes[ed.ns]) P.notes[ed.ns-1].tie=false; ed.ns--; },'Nota borrada'); }
-function selectNote(i){ ed.ns=Math.max(-1,Math.min(i,P.notes.length-1)); markStaff(); renderStaffCaretOnly(); renderPalette(); renderSelLine(); }
+function selectNote(i){ ed.ns=Math.max(-1,Math.min(i,P.notes.length-1)); syncDot('n'); markStaff(); renderStaffCaretOnly(); renderPalette(); renderSelLine(); }
 function renderStaffCaretOnly(){ renderStaff(); }
 /* ---------- Paleta ---------- */
 function figIcon(base,dot){
@@ -102,7 +114,7 @@ function renderPalette(){
     $$('#quals .k').forEach(el=>{ el.disabled=!chord; setPressed(el,chord&&c.q===el.dataset.q); });
     const L=SIGS[P.sig].L, d=c?c.d:ed.cdur, base=DOTTED.includes(d)?d/1.5:d;
     $$('[data-act="dur"]').forEach(el=>{ const v=el.dataset.d==='bar'?L:+el.dataset.d; setPressed(el,el.dataset.d==='bar'?d===L:(base===v&&!(d===L&&L!==48))); });
-    setPressed($('[data-act="dot"]'),DOTTED.includes(d)&&d!==L);
+    setPressed($('[data-act="dot"]'),ed.cdot);
     $('#quals').classList.toggle('open',ed.moreQ||(chord&&!QM[c.q].main)); $('#moreQ').setAttribute('aria-expanded',$('#quals').classList.contains('open')?'true':'false');
     $('#moreQ').textContent=$('#quals').classList.contains('open')?'Menos calidades':'Más calidades';
     if(c){ const b=chordBarOf(ed.cs);
@@ -112,7 +124,7 @@ function renderPalette(){
     const n=selN(); $('[data-act="del"]').disabled=!n;
     const d=n?n.d:ed.ndur, base=DOTTED.includes(d)?d/1.5:d;
     $$('[data-act="fig"]').forEach(el=>setPressed(el,+el.dataset.d===base));
-    const nd=$('[data-act="ndot"]'); setPressed(nd,DOTTED.includes(d)); nd.disabled=base===3;
+    setPressed($('[data-act="ndot"]'),ed.ndot);
     const isNote=n&&!n.rest;
     setPressed($('[data-act="rest"]'),!!(n&&n.rest)); $('[data-act="rest"]').disabled=!n;
     setPressed($('[data-act="tie"]'),!!(n&&n.tie)); $('[data-act="tie"]').disabled=!isNote;
@@ -160,7 +172,7 @@ function renderAll(){
 }
 function afterSwitch(keepSel){
   P=store.pages.find(p=>p.id===store.cur)||store.pages[0]; store.cur=P.id;
-  if(!keepSel){ ed.cs=P.chords.length-1; ed.ns=P.notes.length-1; } clampSel(); ed.bassMode=false; ed.rootMode='add';
+  if(!keepSel){ ed.cs=P.chords.length-1; ed.ns=P.notes.length-1; meterDefaults(); } clampSel(); ed.bassMode=false; ed.rootMode='add';
   $('#trRow').hidden=true; $('#bTr').setAttribute('aria-expanded','false');
   renderAll();
 }

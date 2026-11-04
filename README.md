@@ -11,7 +11,7 @@
 - **Escritura rápida:** `Dm7 G7 | Cmaj7 | % |` y los acordes se reparten solos en los compases. Entiende muchas formas de escribir lo mismo: `Cmaj7`, `C7M`, `CΔ`, `Cm7b5`, `Cø`, `Sol7`, `Sib/Re`…
 - **Pentagrama:** la melodía en clave de sol con el cifrado encima, al estilo de un *Real Book*: alturas, figuras de redonda a semicorchea, puntillos, silencios, ligaduras y alteraciones, con barras de corcheas, ligaduras entre compases y armadura.
 - **Escucharlo:** acordes, melodía, metrónomo y bucle, con el compás que suena resaltado.
-- **Transportar** a cualquier tono con la ortografía correcta (B♭, no A♯), conservando las inversiones.
+- **Transportar** a cualquiera de los 13 tonos mayores (de C a G♭ y F♯) con la ortografía correcta (B♭, no A♯), conservando las inversiones.
 - **Estilos de cifrado:** claro (Cmaj7, Cm7♭5), jazz (C△7, Cø7) o latino (C7M, Cm7(♭5)), y nombres C D E o Do Re Mi.
 - **Cuaderno:** hasta 300 páginas, guardado automático, deshacer y rehacer, y copia de cada página como texto para guardarla o pasarla.
 - **Letra de cuaderno:** el cifrado y las notas usan Petaluma, la tipografía manuscrita de Steinberg.
@@ -36,6 +36,7 @@ En la paleta (a la derecha; en el móvil, fija abajo como un teclado):
 - **Calidad:** mayor, m, 7, maj7, m7, m7♭5, dim, dim7, sus4, 6, 9 y aug; en *Más calidades*, sus2, 7sus4, m6, m(maj7), add9, 6/9, maj9, m9, m11, 7♭9, 7♯9, 7♯11, 7♯5, 13 y 7alt.
 - **Inversión y bajo:** *Fund.*, *1.ª*, *2.ª* y *3.ª* ponen en el bajo la fundamental, la tercera, la quinta o la séptima, y cada botón muestra el bajo que da (G7 → G7/B, G7/D, G7/F). La inversión se mantiene al cambiar la calidad o la fundamental (C/E → Cm/E♭) y al transportar. *Bajo* pone cualquier otra nota en el bajo (C/D).
 - **Duración:** compás entero, redonda, blanca, negra o corchea, y puntillo. Lo nuevo sale con la última duración elegida.
+- **Puntillo:** es un interruptor. Mientras está activado, las figuras que eliges salen con puntillo (negra → negra con puntillo); al elegir un acorde o una nota, se pone como esté su figura. En **6/8 y 12/8 empieza activado**, porque el pulso es la negra con puntillo: los acordes nuevos duran un compás y las notas nuevas, una negra con puntillo. En los demás compases empieza desactivado.
 
 Para cambiar un acorde, tócalo en la grilla y elige otra cosa en la paleta.
 
@@ -65,7 +66,7 @@ La app escribe sola las barras de las corcheas y semicorcheas por pulso, las not
 ### Escuchar, transportar y el cuaderno
 
 - **Reproducir** suena con lo elegido en *Acordes*, *Melodía*, *Metrónomo* y *Bucle*; la grilla y el pentagrama marcan lo que suena. En bucle, los cambios se oyen en la vuelta siguiente.
-- **Transportar** cambia el tono de la página y mueve acordes, bajos y melodía.
+- **Transportar** cambia el tono de la página y mueve acordes, bajos y melodía por el camino más corto. En el tritono (por ejemplo, de C a G♭ o F♯), la melodía sube o baja según cuál la deje más cerca del centro del pentagrama, así que ir y volver no la cambia de octava.
 - **Páginas:** *Nueva página*, *Duplicar* y *Borrar* (pide confirmación). Cada cambio se guarda solo, y se puede deshacer hasta 100 pasos por página.
 - **Texto:** *Copiar la página como texto* da algo así, que se puede pegar en *Texto para importar* para crear una página nueva:
 
@@ -106,7 +107,7 @@ Con la grilla o el pentagrama enfocados:
 | ← → | acorde anterior o siguiente | nota anterior o siguiente |
 | ↑ ↓ | sube o baja medio tono el acorde | sube o baja un grado (con Mayús, medio tono; con Ctrl, una octava) |
 | 1 2 4 8 | redonda, blanca, negra, corchea | ídem, y 6 semicorchea |
-| . | puntillo | puntillo |
+| . | activa o quita el puntillo | activa o quita el puntillo |
 | I | siguiente inversión | |
 | / | elegir el bajo | |
 | S, L | | silencio, ligadura |
@@ -119,7 +120,7 @@ Además: <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace, <kbd>Ctrl</kbd>+<kbd>Mayús</kbd>
 
 ## Pruebas
 
-Hay una batería de pruebas de navegador en `tests/` (unas 200 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, transporte, texto, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
+Hay una batería de pruebas de navegador en `tests/` (unas 260 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, transporte, texto, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
 
 ```
 npm test                    # equivale a: node tests/run.mjs

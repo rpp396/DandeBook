@@ -23,7 +23,7 @@ const SIGS={
   '5/4':{L:60,beat:12,beam:12,top:5,bot:4}, '2/2':{L:48,beat:24,beam:12,top:2,bot:2},
   '6/8':{L:36,beat:18,beam:18,top:6,bot:8}, '12/8':{L:72,beat:18,beam:18,top:12,bot:8},
 };
-const KEYS=[['C',0,0,0],['G',4,0,1],['D',1,0,2],['A',5,0,3],['E',2,0,4],['B',6,0,5],['F#',3,1,6],['Db',1,-1,-5],['Ab',5,-1,-4],['Eb',2,-1,-3],['Bb',6,-1,-2],['F',3,0,-1]].map(([k,r,a,n])=>({k,r,a,n}));
+const KEYS=[['C',0,0,0],['G',4,0,1],['D',1,0,2],['A',5,0,3],['E',2,0,4],['B',6,0,5],['F#',3,1,6],['Gb',4,-1,-6],['Db',1,-1,-5],['Ab',5,-1,-4],['Eb',2,-1,-3],['Bb',6,-1,-2],['F',3,0,-1]].map(([k,r,a,n])=>({k,r,a,n}));
 const KEYMAP={}; KEYS.forEach(k=>{KEYMAP[k.k]=k;});
 const SHARP_ORDER=[3,0,4,1,5,2,6], FLAT_ORDER=[6,2,5,1,4,0,3];
 const SHARP_POS=[38,35,39,36,33,37,34], FLAT_POS=[34,37,33,36,32,35,31]; // posición en clave de sol
@@ -62,13 +62,18 @@ const QM={}; QUAL.forEach(([k,iv,pop,jazz,lat,sayq,main])=>{QM[k]={k,iv,pop,jazz
 const FIGNAME={72:'redonda con puntillo',48:'redonda',36:'blanca con puntillo',24:'blanca',18:'negra con puntillo',12:'negra',9:'corchea con puntillo',6:'corchea',3:'semicorchea'};
 const FIGS_DESC=[48,36,24,18,12,9,6,3];
 const BASES=[48,24,12,6,3], DOTTED=[72,36,18,9];
+const isCompound=sig=>SIGS[sig].beat===18; // 6/8 y 12/8: el pulso es la negra con puntillo
+const baseOf=d=>DOTTED.includes(d)?d/1.5:d;
+const isFig=d=>BASES.includes(d)||DOTTED.includes(d);
+const withDot=(base,on)=>on&&base!==3&&BASES.includes(base)?base*1.5:base; // la semicorchea no lleva puntillo
 const DLET={48:'w',24:'h',12:'q',6:'e',3:'s'};
 /* ---------- Estado y guardado ---------- */
 const LSKEY='pautado-v1', PAGES_MAX=300;
 const DEF_SET={style:'pop',names:'us',simile:true,view:'grid',chords:true,melody:true,metro:false,loop:false,min:false};
 let store={pages:[],cur:'',gone:[],set:{...DEF_SET}};
 let P=null;
-const ed={cs:-1,ns:-1,rootMode:'add',bassMode:false,accTo:'root',cdur:48,ndur:12,moreQ:false};
+// cdot / ndot: el puntillo de la paleta de acordes y de notas es un interruptor que se mantiene; empieza activado en compás compuesto
+const ed={cs:-1,ns:-1,rootMode:'add',bassMode:false,accTo:'root',cdur:48,ndur:12,cdot:false,ndot:false,moreQ:false};
 const hist=new Map();
 let saveState='local';
 
@@ -117,6 +122,7 @@ function load(){
 }
 let saveT=0;
 function saveLocal(){
+  clearTimeout(saveT); saveT=0;
   try{ localStorage.setItem(LSKEY,JSON.stringify({pages:store.pages,cur:store.cur,gone:store.gone,set:store.set})); if(saveState==='fail') saveState='local'; }
   catch(e){ saveState=DB.ready?'cloud':'fail'; }
   renderSaveState();

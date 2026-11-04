@@ -19,7 +19,7 @@ function onKey(e){
     if(k==='Home'||k==='End'){ e.preventDefault(); selectChord(k==='Home'?0:P.chords.length-1,true); return; }
     if(k==='ArrowUp'||k==='ArrowDown'){ e.preventDefault(); chordSemi(k==='ArrowUp'?1:-1); return; }
     if(k==='Backspace'||k==='Delete'){ e.preventDefault(); delChord(); return; }
-    if({'1':48,'2':24,'4':12,'8':6}[k]){ e.preventDefault(); chordDur({'1':48,'2':24,'4':12,'8':6}[k]); return; }
+    if({'1':48,'2':24,'4':12,'8':6}[k]){ e.preventDefault(); chordFig({'1':48,'2':24,'4':12,'8':6}[k]); return; }
     if(k==='.'){ e.preventDefault(); chordDot(); return; }
     if(k==='/'){ e.preventDefault(); if(selC()&&!selC().nc){ ed.bassMode=!ed.bassMode; renderPalette(); } return; }
     if(k==='i'||k==='I'){ e.preventDefault(); const c=selC(); if(c&&!c.nc){ const n=chordTones(c).length, cur=invOf(c); chordInv(cur<0||cur>=n?0:cur+1); } return; }
@@ -54,7 +54,7 @@ function bind(){
       case 'nc': insertChord({nc:true,d:ed.cdur}); break;
       case 'inv': chordInv(+b.dataset.k); break;
       case 'qual': chordQual(b.dataset.q); break;
-      case 'dur': chordDur(b.dataset.d==='bar'?SIGS[P.sig].L:+b.dataset.d); break;
+      case 'dur': if(b.dataset.d==='bar') chordDur(SIGS[P.sig].L); else chordFig(+b.dataset.d); break;
       case 'dot': chordDot(); break;
       case 'fig': noteFig(+b.dataset.d); break;
       case 'ndot': noteDot(); break;
@@ -94,12 +94,14 @@ function bind(){
   $('#vGrid').addEventListener('click',()=>setView('grid')); $('#vStaff').addEventListener('click',()=>setView('staff'));
   $('#pTitle').addEventListener('input',e=>{ P.title=e.target.value.slice(0,80); touch(P); saveSoon(); clearTimeout(bind.tt); bind.tt=setTimeout(renderPages,400); });
   $('#pTitle').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusSel(); } });
-  $('#pSig').addEventListener('change',e=>{ const v=e.target.value; if(!has(SIGS,v)) return; change(()=>{ P.sig=v; },`Compás ${v}`); });
+  $('#pSig').addEventListener('change',e=>{ const v=e.target.value; if(!has(SIGS,v)) return; const was=isCompound(P.sig);
+    change(()=>{ P.sig=v; },()=>`Compás ${v}${isCompound(v)!==was?(isCompound(v)?', puntillo activado':', puntillo desactivado'):''}`);
+    meterDefaults(); renderPalette(); });
   $('#pKey').addEventListener('change',e=>{ const v=e.target.value; if(!has(KEYMAP,v)) return; change(()=>{ P.key=v; },`Tono ${keyLabel(KEYMAP[v])}`); });
   $('#bTr').addEventListener('click',()=>{ const row=$('#trRow'); row.hidden=!row.hidden; $('#bTr').setAttribute('aria-expanded',row.hidden?'false':'true'); if(!row.hidden){ $('#trTo').value=P.key; $('#trTo').focus(); } });
   $('#bTrNo').addEventListener('click',()=>{ $('#trRow').hidden=true; $('#bTr').setAttribute('aria-expanded','false'); $('#bTr').focus(); });
   $('#bTrGo').addEventListener('click',()=>{ const to=KEYMAP[$('#trTo').value]; if(!to) return; const from=KEYMAP[P.key]; if(to===from){ $('#trRow').hidden=true; return; }
-    const iv=trInterval(from,to);
+    const iv=trFor(from,to,P.notes);
     change(()=>{ P.chords.forEach(c=>{ if(c.nc) return; const n=trPC(c.r,c.a,iv); c.r=n.r; c.a=n.a; if(c.b){ const b=trPC(c.b.r,c.b.a,iv); c.b={r:b.r,a:b.a}; } });
       P.notes.forEach(n=>{ if(n.rest) return; const t=trNote(n,iv); n.s=t.s; n.a=t.a; }); P.key=to.k; },`Transportado a ${keyLabel(to)}`);
     $('#trRow').hidden=true; $('#bTr').setAttribute('aria-expanded','false'); });
@@ -123,7 +125,8 @@ function bind(){
   let lastW=0; new ResizeObserver(()=>{ const w=$('#sheetBody').clientWidth; if(Math.abs(w-lastW)>2){ lastW=w; if(store.set.view==='staff') renderStaff(); else renderGrid(); } }).observe($('#sheetBody'));
   new ResizeObserver(dockSize).observe($('#palette')); dockMQ.addEventListener('change',dockSize);
   coarseMQ.addEventListener('change',()=>{ if(store.set.view==='staff') renderStaff(); });
-  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&A.ctx&&A.playing) A.ctx.resume().catch(()=>{}); });
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden){ if(saveT) saveLocal(); } else if(A.ctx&&A.playing) A.ctx.resume().catch(()=>{}); });
+  addEventListener('pagehide',()=>{ if(saveT) saveLocal(); }); // lo pendiente de guardar no se pierde al recargar o cerrar justo después de un cambio
 }
 // tope de páginas: load() solo lee PAGES_MAX, así que no se deja crear más (se perderían al recargar)
 function bookFull(){ if(store.pages.length<PAGES_MAX) return false; const t=`El cuaderno está lleno (${PAGES_MAX} páginas): borra alguna para crear otra.`; flashSel(t); say(t); return true; }
