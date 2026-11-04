@@ -1,0 +1,53 @@
+# DandeBook (Pautado)
+
+Cuaderno de grillas de acordes con modo pentagrama. La interfaz está en español. Hermano de DandEtudeDuR (rpp396/DandEtudeDuR), del que toma la paleta de colores, las tipografías y las convenciones.
+
+La app no tiene dependencias ni build: `index.html` (solo HTML), `styles.css` (todos los estilos, con las variables de color y el modo oscuro), las fuentes en `fonts/` y el JavaScript en `js/`, repartido en scripts clásicos que `index.html` carga al final del `<body>` en orden. Para probarla basta con abrir `index.html` (funciona con `file://`) o servir la carpeta. El audio arranca solo tras pulsar un botón.
+
+Nació como Artifact de claude.ai. Allí las páginas se guardan además en la cuenta con `window.claude.use('db')` / `use('user')` (`js/nube.js`); fuera de claude.ai esas llamadas no existen y basta `localStorage`. `tools/artefacto.mjs` arma el archivo único para publicarlo.
+
+## Mapa del código (archivos de `js/`, en orden de carga)
+
+**Scripts clásicos, no módulos ES** (los módulos no cargan con `file://`): todos comparten el ámbito global, sin `import`/`export`. **El orden importa:** el código que se ejecuta al cargar un archivo solo puede usar lo de ese archivo y los anteriores; dentro de las funciones se puede usar cualquier cosa. Lo que arranca la app va en `inicio.js`, el último. Cada archivo conserva sus secciones `/* ---------- … ---------- */`.
+
+| Archivo | Qué hace |
+|---|---|
+| `glifos.js` | `GLYPHS`: contornos de Petaluma como trazados SVG (`{w, d}` en 1/100 de espacio: clave de sol, cabezas, silencios, banderas, alteraciones, puntillo, cifras de compás, signo de repetición). Al cargar inserta un `<svg><defs>` con `<path id="g-…">`; se dibujan con `use(k,x,y,sp)` (`pentagrama.js`) o `<use href="#g-…">`. |
+| `datos.js` | `$`, `$$`, `esc`, `has`, `isObj`, `intIn`, `oneOf`, `say` (anuncios en `#sr`), media queries (`coarseMQ`, `fineMQ`, `reduceMQ`, `dockMQ`), `smooth()`. Datos musicales: `LET`/`LAT`/`PC`, `SIGS` (compases), `KEYS`/`KEYMAP` (tonos y armaduras), `QUAL`/`QM` (calidades con su texto en cada estilo y su nombre hablado), `FIGNAME`, `DOTTED`. Estado: `store = {pages, cur, gone, set}`, `P` (página abierta), `ed` (selección y modos de la paleta), `hist`. Guardado: `load`, `saveLocal`, `saveSoon`, `touch`, y la validación `cleanPage` / `cleanChord` / `cleanNote` / `cleanSet`. `examplePage()`. |
+| `teoria.js` | Nombres (`rootName`, `rootSay`, `chordHTML`, `chordSay`, `chordText`, `noteName`, `noteSay`), inversiones (`INV`, `invBass`, `invOf`, `setInv`, `keepInv`), transporte (`trInterval`, `trPC`, `trNote`, `respell`, `semiShift`), lectura (`parseChord` con `ALIAS`, `parseChordBars`, `parseMelody`, `importText`) y escritura (`exportText`), y reparto en compases (`barCount`, `chordSegs`, `melBars`, `startOf`). |
+| `nube.js` | Guardado en la cuenta de claude.ai: `initCloud` (lee `data/users/<id>/` y une con `mergeRemote`), `cloudQueue` / `cloudFlush` (una escritura cada vez, reintento único en `unavailable`). |
+| `grilla.js` | `renderGrid` (compases y segmentos `.seg` con `flex-grow` = duración), `fitGrid` (el cifrado debe verse entero: primero el bajo baja de línea —`.ch.stack`—, luego se reduce la letra; elige 4, 2 o 1 compases por fila para no bajar de 13 px), `markGrid` (selección y cursor), `focusSel`. |
+| `pentagrama.js` | `layoutStaff` (compases por sistema según el ancho mínimo de cada compás), `barNeeds` (anchos natural y mínimo por ataque, con sitio para el cifrado medido con `labWidth`), `layoutBar`, `drawBar` (cabezas, plicas, banderas, barras por pulso con media barra de semicorchea, alteraciones según armadura y compás, puntillos, líneas adicionales), `tiePath`, `renderStaff`, `sysLabel` (descripción en palabras). Puntero: `staffHit`, `showGhost`, `commitInsert` (rellena con silencios hasta el compás tocado), `bindStaff` (tocar inserta; con ratón, arrastrar una nota cambia su altura). |
+| `edicion.js` | Historial (`change` guarda una instantánea antes de cada cambio; `undo`/`redo`, 100 pasos por página; `commit` → `touch`, `renderAll`, `saveSoon`, `revealSel`). Operaciones: `insertChord`, `rootTap`, `chordQual`, `chordInv`, `chordDur`, `chordDot`, `chordSemi`, `delChord`, `insertNote`, `noteByLetter`, `noteFig`, `noteStep`, `noteOct`, `noteAcc`, `noteTie`, `noteRest`, `delNote`. Paleta: `buildPalette`, `relabelPalette`, `renderPalette`. Repintado: `renderAll`, `renderHead`, `renderPages`, `afterSwitch`. |
+| `audio.js` | Web Audio: `ensureAudio`, `voice` (triángulo con filtro), `playChord` (bajo en la octava 2, acorde en la 3-4), `schedulePass`, `play`/`stop`, bucle (programa la vuelta siguiente 1,2 s antes) y `frame` (marca lo que suena y sigue la página). |
+| `eventos.js` | `onKey` (atajos solo con el foco dentro de `#sheetBody`; Ctrl+Z/Y y Esc en toda la página) y `bind` (todos los controles, `ResizeObserver` de la hoja y de la paleta). `dockSize` pone `--dockH`. |
+| `inicio.js` | Arranque: `load()`, rellena selectores y paleta, `bind()`, `renderAll()`, repinta al cargar las fuentes e `initCloud()`. Debe ser el último script. |
+
+## Modelo de datos
+
+- **Página:** `{id, title, sig, bpm, key, chords, notes, created, updated, ex?}` (`ex` = página de ejemplo, que no se sube a la cuenta hasta que se edita). `localStorage` `pautado-v1` = `{pages, cur, gone, set}`; `gone` son los id borrados (para no resucitarlos al unir con la cuenta). En la cuenta, cada página es un documento `data/users/<id>/<página>`; borrar escribe `{id, del:true, updated}`.
+- **Tiempo en ticks**, como DandEtudeDuR: 1 negra = 12 (semicorchea 3, corchea 6, blanca 24, redonda 48; con puntillo ×1,5). `SIGS[sig]`: `L` (ticks por compás), `beat` (pulso del metrónomo y de «tiempos»: negra; blanca en 2/2; negra con puntillo en 6/8 y 12/8), `beam` (unidad de agrupación de las barras).
+- **Acorde:** `{r, a, q, d, b?}` o `{nc:true, d}`. `r` = letra 0–6 (C…B), `a` = alteración −2…2, `q` = clave de `QM`, `d` = duración en ticks, `b = {r, a}` el bajo. La secuencia de acordes es continua: los compases salen de sumar duraciones (`chordSegs`); un acorde puede cruzar la barra (se ve una raya en la grilla).
+- **Nota:** `{s, a, d, rest, tie}`. `s` = grado diatónico absoluto, `octava*7 + letra` (C4 = 28, B4 = 34 = tercera línea, intervalo válido 14–56); `a` es la alteración real, no la escrita: la armadura y las alteraciones del compás se calculan al dibujar. `tie` liga con la siguiente; `fixTies` hace que la ligada copie la altura. Las notas que cruzan la barra se parten al dibujar (`melBars`, `decomp`), no en los datos.
+- **Inversiones:** `INV[q]` = notas que van al bajo en 1.ª, 2.ª y 3.ª como `[grados, semitonos]` sobre la fundamental, para deletrear bien (`trPC`). `invOf` reconoce por sonido la inversión de un bajo existente (0 sin bajo o con la fundamental, −1 otro bajo). `keepInv` conserva la inversión al cambiar calidad, fundamental o alteración; `chordSemi` y el transporte también.
+
+## Convenciones
+
+- **Cada cambio pasa por `change(fn, mensaje)`**: guarda la instantánea para deshacer, aplica, repinta, guarda y anuncia. No escribir en `P` fuera de `change` salvo en arrastres que se confirman al soltar.
+- **Datos no fiables (validar al leer, escapar al pintar):** lo que viene de `localStorage`, de la cuenta o de un texto importado pasa por `cleanPage` y compañía (solo campos conocidos, con tipo y rango; compás y tono solo si `has(SIGS,…)` / `has(KEYMAP,…)`, **nunca** `SIGS[x]` con una clave de fuera). Límites: 300 páginas, 512 acordes y 1024 notas por página. Todo lo interpolado en `innerHTML` lleva `esc()`.
+- **CSP** (`<meta>` en `index.html`, la misma que DandEtudeDuR): sin scripts ni manejadores en línea, sin atributos `style=""` (usar clases o `el.style.x` por JS), sin `eval` y sin recursos externos. `tests/lib.mjs` registra las violaciones y las peticiones a otros sitios, y cada suite falla si hay alguna.
+- **Fuentes:** solo el subconjunto latin, locales. «Pautado Cifra» (cifrado: letras, números, ♭ ♮ ♯) y «Pautado Simbolos» (△ ° ø − + de las calidades en estilo jazz, en U+E870–E874) son subconjuntos renombrados de Petaluma Script y Petaluma: la licencia OFL no deja usar el nombre reservado «Petaluma» en versiones modificadas. Para añadir caracteres, volver a recortar desde https://github.com/steinbergmedia/petaluma con `pyftsubset` y renombrar (nameID 1, 4, 6, 16).
+- **Móvil:** objetivos de 44 px con `(any-pointer: coarse)`; a ≤ 920 px la paleta es fija abajo (`--dockH` reserva su sitio y `revealSel` mantiene lo marcado a la vista); nada debe desbordar a 320 px.
+- **Accesibilidad:** `say()` anuncia cada cambio; los segmentos de la grilla son botones con nombre completo y `tabindex` itinerante; cada sistema del pentagrama es `role=img` con `sysLabel`.
+
+## Pruebas
+
+`npm test` (= `node tests/run.mjs [filtro]`), sin dependencias: `tests/lib.mjs` levanta un servidor estático en Node, arranca Chrome sin interfaz (`CHROME` o el primero que encuentre) y lo controla por DevTools. `open(opts)` abre la app con el almacenamiento vacío (`mobile`, `scale`, `dark`, `inject` para un script previo como el `window.claude` simulado de `nube.test.mjs`); `part(nombre, opts, fn)` ejecuta una parte y al final comprueba que no hubo errores de consola, violaciones de CSP ni peticiones externas. Como los scripts son clásicos, las pruebas leen y llaman directamente al estado global (`P`, `ed`, `store`, `parseChord`…). Suites: `edicion` (paleta, teclado, escribir, texto, transporte, pentagrama, arrastre, guardado, sonido), `inversiones`, `movil` (390 y 320 px: toques, paleta fija, 44 px, cifrado sin cortar ni solaparse), `nube` y `seguridad` (datos hostiles, importación hostil, `file://`). Con `ARTEFACTO=1` las mismas pruebas cargan `dist/prueba.html` (generado por `tools/artefacto.mjs`).
+
+## Ideas pendientes
+
+- Tresillos y anacrusa en el pentagrama; signos de repetición, casillas de 1.ª y 2.ª, coda y segno en la grilla.
+- Vista para instrumentos transpositores (Si♭, Mi♭, Fa) y clave de fa.
+- Compartir una página por enlace (`#…`, como `#ej=` en DandEtudeDuR) y exportar a MusicXML.
+- Diagramas de acordes para guitarra o teclado y análisis en grados (ii–V–I).
+- Puente con DandEtudeDuR: practicar el ritmo de la melodía allí.

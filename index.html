@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pautado</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#sheet">Saltar a la página</a>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Pautado</h1>
+      <p>Grilla de acordes con pentagrama, para apuntar como en un cuaderno.</p>
+    </div>
+    <div class="book" role="group" aria-label="Cuaderno">
+      <label class="sr-only" for="pageSel">Página del cuaderno</label>
+      <select id="pageSel"></select>
+      <button type="button" class="btn sm" id="bNew">Nueva página</button>
+      <button type="button" class="btn sm" id="bDup">Duplicar</button>
+      <button type="button" class="btn sm danger" id="bDel">Borrar</button>
+      <span id="saveState" class="save" role="status"></span>
+    </div>
+  </header>
+  <div class="ask" id="delAsk" role="group" aria-labelledby="delQ" hidden>
+    <p id="delQ"></p>
+    <button type="button" class="btn sm danger" id="bDelYes">Borrar la página</button>
+    <button type="button" class="btn sm" id="bDelNo">Cancelar</button>
+  </div>
+
+  <div class="layout">
+    <main class="main" id="main">
+      <div class="transport">
+        <button type="button" class="btn primary" id="bPlay">
+          <svg id="icPlay" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>
+          <svg id="icStop" viewBox="0 0 16 16" aria-hidden="true" hidden><rect x="3" y="3" width="10" height="10" rx="1.5" fill="currentColor"/></svg>
+          <span id="playTxt">Reproducir</span>
+        </button>
+        <div class="tempo" role="group" aria-label="Tempo">
+          <span class="glyph" id="tGlyph"></span><span class="eq" aria-hidden="true">=</span>
+          <button type="button" class="step" id="tDown" aria-label="Más lento">−</button>
+          <input id="bpm" type="number" inputmode="numeric" min="30" max="300" step="1">
+          <button type="button" class="step" id="tUp" aria-label="Más rápido">+</button>
+        </div>
+        <div class="chips" role="group" aria-label="Qué suena">
+          <button type="button" class="chip" id="oChords" aria-pressed="true">Acordes</button>
+          <button type="button" class="chip" id="oMelody" aria-pressed="true">Melodía</button>
+          <button type="button" class="chip" id="oMetro" aria-pressed="false">Metrónomo</button>
+          <button type="button" class="chip" id="oLoop" aria-pressed="false">Bucle</button>
+        </div>
+        <div class="views" role="group" aria-label="Vista">
+          <button type="button" id="vGrid" aria-pressed="true">Grilla</button>
+          <button type="button" id="vStaff" aria-pressed="false">Pentagrama</button>
+        </div>
+      </div>
+
+      <section class="sheet" id="sheet" tabindex="-1" aria-label="Página">
+        <div class="sheet-head">
+          <label class="sr-only" for="pTitle">Título de la página</label>
+          <input id="pTitle" class="ptitle" maxlength="80" autocomplete="off" spellcheck="false">
+          <div class="meta">
+            <label>Compás <select id="pSig"></select></label>
+            <label>Tono <select id="pKey"></select></label>
+            <button type="button" class="btn sm" id="bTr" aria-expanded="false" aria-controls="trRow">Transportar</button>
+            <span class="exchip" id="exChip" hidden>Página de ejemplo</span>
+          </div>
+          <div class="trrow" id="trRow" hidden>
+            <label>Transportar acordes y melodía a <select id="trTo"></select></label>
+            <button type="button" class="btn sm primary" id="bTrGo">Transportar</button>
+            <button type="button" class="btn sm" id="bTrNo">Cancelar</button>
+          </div>
+        </div>
+        <div id="sheetBody">
+          <div id="grid" class="grid" role="group" aria-label="Grilla de acordes"></div>
+          <div id="staff" class="staff" tabindex="0" role="group" aria-label="Pentagrama de la melodía" aria-describedby="selLine" hidden></div>
+        </div>
+        <div class="sheet-foot">
+          <p id="selLine" class="selline"></p>
+          <form class="write" id="wForm" autocomplete="off">
+            <label for="wIn">Escribir acordes</label>
+            <div class="wrow">
+              <input id="wIn" spellcheck="false" autocapitalize="off" placeholder="Dm7 G7 | Cmaj7 | % |" aria-describedby="wMsg">
+              <button type="submit" class="btn sm">Añadir</button>
+            </div>
+            <p id="wMsg" class="wmsg" role="status"></p>
+          </form>
+          <p class="hint" id="staffHint" hidden>Toca el pentagrama para poner una nota a esa altura; después ajusta su figura o su altura en la paleta. Los acordes se escriben en la grilla.</p>
+        </div>
+      </section>
+    </main>
+
+    <aside class="panel" aria-label="Herramientas">
+      <section class="palette" id="palette" aria-label="Paleta">
+        <div class="pal-top">
+          <div class="readout" id="readout"></div>
+          <div class="pal-acts">
+            <button type="button" class="k ic" data-act="undo" aria-label="Deshacer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+            <button type="button" class="k ic" data-act="redo" aria-label="Rehacer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+            <button type="button" class="k ic" data-act="del" aria-label="Borrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 5H9l-6 7 6 7h12z"/><path d="m17 9-6 6M11 9l6 6"/></svg></button>
+            <button type="button" class="k ic mobonly" data-act="min" aria-expanded="true" aria-controls="palBody" aria-label="Plegar la paleta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          </div>
+        </div>
+        <div class="pal-body" id="palBody">
+          <div id="palGrid" class="pal-body">
+            <div class="pg" role="group" aria-labelledby="hRoot">
+              <h3 class="ph" id="hRoot">Fundamental</h3>
+              <div class="roots" id="roots"></div>
+              <div class="accs">
+                <button type="button" class="k hand" data-act="acc" data-a="-1" aria-label="Bemol">♭</button>
+                <button type="button" class="k hand" data-act="acc" data-a="0" aria-label="Natural">♮</button>
+                <button type="button" class="k hand" data-act="acc" data-a="1" aria-label="Sostenido">♯</button>
+                <button type="button" class="k" data-act="rmode" aria-pressed="false" title="Al tocar una nota, cambia la fundamental del acorde elegido en vez de añadir uno">Cambiar</button>
+                <button type="button" class="k" data-act="nc" title="Sin acorde">N.C.</button>
+              </div>
+            </div>
+            <div class="pg" role="group" aria-labelledby="hQual">
+              <h3 class="ph" id="hQual">Calidad</h3>
+              <div class="quals" id="quals"></div>
+              <button type="button" class="more" id="moreQ" aria-expanded="false" aria-controls="quals">Más calidades</button>
+            </div>
+            <div class="pg" role="group" aria-labelledby="hInv">
+              <h3 class="ph" id="hInv">Inversión y bajo</h3>
+              <div class="invs">
+                <button type="button" class="k inv" data-act="inv" data-k="0" aria-pressed="false"><span class="il">Fund.</span><span class="ib"></span></button>
+                <button type="button" class="k inv" data-act="inv" data-k="1" aria-pressed="false"><span class="il">1.ª</span><span class="ib"></span></button>
+                <button type="button" class="k inv" data-act="inv" data-k="2" aria-pressed="false"><span class="il">2.ª</span><span class="ib"></span></button>
+                <button type="button" class="k inv" data-act="inv" data-k="3" aria-pressed="false"><span class="il">3.ª</span><span class="ib"></span></button>
+                <button type="button" class="k" data-act="bass" aria-pressed="false" title="La próxima nota que toques es el bajo, aunque no sea del acorde">/ Bajo</button>
+              </div>
+            </div>
+            <div class="pg" role="group" aria-labelledby="hDur">
+              <h3 class="ph" id="hDur">Duración</h3>
+              <div class="durs" id="durs"></div>
+            </div>
+          </div>
+          <div id="palStaff" class="pal-body" hidden>
+            <div class="pg" role="group" aria-labelledby="hFig">
+              <h3 class="ph" id="hFig">Figura</h3>
+              <div class="figs" id="figs"></div>
+            </div>
+            <div class="pg" role="group" aria-labelledby="hNote">
+              <h3 class="ph" id="hNote">Nota</h3>
+              <div class="nrow">
+                <button type="button" class="k" data-act="rest" aria-pressed="false">Silencio</button>
+                <button type="button" class="k" data-act="tie" aria-pressed="false">Ligar</button>
+                <button type="button" class="k hand" data-act="nacc" data-a="-1" aria-label="Bemol">♭</button>
+                <button type="button" class="k hand" data-act="nacc" data-a="0" aria-label="Natural">♮</button>
+                <button type="button" class="k hand" data-act="nacc" data-a="1" aria-label="Sostenido">♯</button>
+              </div>
+              <div class="mrow">
+                <button type="button" class="k" data-act="step" data-v="-1">↓ Bajar</button>
+                <button type="button" class="k" data-act="step" data-v="1">↑ Subir</button>
+                <button type="button" class="k" data-act="oct" data-v="-1">8va ↓</button>
+                <button type="button" class="k" data-act="oct" data-v="1">8va ↑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <details class="extra" id="txtBox">
+        <summary>Texto</summary>
+        <div class="in">
+          <p>Copia la página como texto para guardarla o pasarla, o pega un texto para crear una página nueva.</p>
+          <div class="acts">
+            <button type="button" class="btn sm" id="bCopy">Copiar la página como texto</button>
+          </div>
+          <p class="tmsg" id="copyMsg" role="status"></p>
+          <label class="f" for="txtIn">Texto para importar</label>
+          <textarea id="txtIn" spellcheck="false" placeholder="Título: Mi tema&#10;Compás: 4/4 · Tempo: 110 · Tono: F&#10;| Gm7 C7 | Fmaj7 | % | Bbmaj7 |&#10;Melodía: D5q C5q Bb4h | A4w"></textarea>
+          <div class="acts"><button type="button" class="btn sm" id="bImport">Crear página desde el texto</button></div>
+          <p class="tmsg" id="impMsg" role="status"></p>
+        </div>
+      </details>
+
+      <details class="extra" id="setBox">
+        <summary>Ajustes</summary>
+        <div class="in">
+          <label class="f">Estilo de cifrado
+            <select id="sStyle">
+              <option value="pop">Claro: Cmaj7, Cm7, Cm7♭5</option>
+              <option value="jazz">Jazz: C△7, C−7, Cø7</option>
+              <option value="lat">Latino: C7M, Cm7, Cm7(♭5)</option>
+            </select>
+          </label>
+          <label class="f">Nombres de las notas
+            <select id="sNames">
+              <option value="us">Cifrado americano: C D E</option>
+              <option value="lat">Do Re Mi</option>
+            </select>
+          </label>
+          <label class="ck"><input type="checkbox" id="sSim"> Mostrar % en los compases que repiten el anterior</label>
+        </div>
+      </details>
+
+      <details class="extra">
+        <summary>Cómo se usa</summary>
+        <div class="in">
+          <ul>
+            <li><b>Grilla:</b> toca una nota (C, D, E…) para añadir un acorde; después elige su calidad y su duración. Lo nuevo va detrás del acorde marcado.</li>
+            <li><b>Cambiar un acorde:</b> tócalo en la grilla y elige otra calidad o duración; con <i>Cambiar</i> activado, la nota que toques pasa a ser su fundamental.</li>
+            <li><b>Inversiones:</b> con el acorde marcado, <i>Fund.</i>, <i>1.ª</i>, <i>2.ª</i> y <i>3.ª</i> ponen en el bajo la fundamental, la tercera, la quinta o la séptima (C/E, C/G, G7/F). Se mantienen si cambias la calidad o la fundamental. La tecla I pasa a la siguiente.</li>
+            <li><b>Otro bajo:</b> pulsa <i>/ Bajo</i> y luego la nota del bajo, aunque no sea del acorde (C/D).</li>
+            <li><b>Escribir:</b> <code>Dm7 G7 | Cmaj7 | % |</code>: cada <code>|</code> cierra un compás, los acordes de un compás se lo reparten y <code>%</code> repite el anterior. <code>Dm7:3 G7:1</code> da los tiempos.</li>
+            <li><b>Pentagrama:</b> toca para poner una nota; la siguiente sale con la misma figura. Arrastra una nota con el ratón para cambiar su altura.</li>
+            <li><b>Teclado:</b> con la grilla o el pentagrama enfocados, A–G escribe, ← → elige, ↑ ↓ sube o baja, I cambia la inversión, 1 2 4 8 6 cambia la figura, <kbd>.</kbd> el puntillo, Retroceso borra y P reproduce.</li>
+          </ul>
+        </div>
+      </details>
+    </aside>
+  </div>
+</div>
+<div id="sr" class="sr-only" aria-live="polite"></div>
+<script src="js/glifos.js"></script>
+<script src="js/datos.js"></script>
+<script src="js/teoria.js"></script>
+<script src="js/nube.js"></script>
+<script src="js/grilla.js"></script>
+<script src="js/pentagrama.js"></script>
+<script src="js/edicion.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/eventos.js"></script>
+<script src="js/inicio.js"></script>
+</body>
+</html>

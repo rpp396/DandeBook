@@ -1,0 +1,12 @@
+{
+  "name": "dandebook",
+  "private": true,
+  "description": "Cuaderno de grillas de acordes con pentagrama (sin build ni dependencias). Este package.json solo existe para las pruebas.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "artefacto": "node tools/artefacto.mjs"
+  }
+}
