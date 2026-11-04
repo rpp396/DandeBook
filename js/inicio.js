@@ -5,7 +5,7 @@
 /* ---------- Arranque ---------- */
 load();
 P=store.pages.find(p=>p.id===store.cur)||store.pages[0];
-ed.cs=P.chords.length-1; ed.ns=P.notes.length-1;
+ed.cs=P.chords.length-1; ed.ns=P.notes.length-1; meterDefaults();
 $('#pSig').innerHTML=Object.keys(SIGS).map(s=>`<option value="${s}">${s}</option>`).join('');
 fillKeySelects(); buildPalette(); relabelPalette();
 $('#sStyle').value=store.set.style; $('#sNames').value=store.set.names; $('#sSim').checked=store.set.simile;

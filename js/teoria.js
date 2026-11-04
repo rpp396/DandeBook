@@ -56,6 +56,13 @@ function respell(r,a){
   while(a<-1){ const r2=(r+6)%7; a+=(PC[r]-PC[r2]+12)%12; r=r2; }
   return {r,a};
 }
+// Intervalo para transportar una página: el más cercano; en el tritono (6 semitonos, igual de lejos arriba que abajo)
+// la melodía sube o baja según quede más cerca del centro del pentagrama (B4), para que ir y volver no la suba una octava.
+function trFor(from,to,notes){
+  const iv=trInterval(from,to); if(iv.dc!==6) return iv;
+  const ss=notes.filter(n=>!n.rest).map(n=>n.s); const avg=ss.length?ss.reduce((a,v)=>a+v,0)/ss.length:34;
+  return avg>34?{ds:iv.ds-7,dc:-6}:iv;
+}
 function trPC(r,a,iv){ const r2=((r+iv.ds)%7+7)%7; let a2=(PC[r]+a+iv.dc)-PC[r2]; a2=((a2%12)+18)%12-6; return respell(r2,a2); }
 function trNote(n,iv){
   const midi=midiOf(n.s,n.a)+iv.dc; let s=n.s+iv.ds, a=midi-midiNat(s);

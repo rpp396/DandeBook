@@ -120,6 +120,9 @@ await part('Edición', { width: 1280, height: 900 }, async (b, E) => {
   await E('undo()'); ok(await E('P.notes[0].s') === s0, 'deshacer el arrastre');
 
   // --- guardado y recarga
+  await E(`rootTap(2)`); await b.reload();
+  ok(await E('store.pages.some(p=>p.chords.some(c=>c.r===2&&c.q===""))'), 'un cambio hecho justo antes de recargar no se pierde');
+  await E(`(()=>{ const i=P.chords.findIndex(c=>c.r===2&&c.q===''); if(i>=0) P.chords.splice(i,1); saveLocal(); })()`);
   await E(`saveLocal()`); const id = await E('P.id');
   await b.reload();
   ok(await E('P.id') === id && await E('P.notes.length') > 0, 'la página se recupera al recargar');
