@@ -175,4 +175,30 @@ await part('Sonido con la forma', { width: 1280, height: 900 }, async (b, E) => 
   await E('stop()');
 });
 
+for (const [w, mobile] of [[1280, false], [320, true]]) {
+  await part(`Pentagrama ${w}px`, { width: w, height: 900, mobile, scale: mobile ? 2 : 1 }, async (b, E) => {
+    await E(`P.marks=cleanMarks([{b:0,rs:true,segno:true},{b:2,v:1,re:3},{b:3,v:2,rs:true},{b:4,re:2,tocoda:true},{b:5,fine:true},{b:7,go:'ds',al:'coda'},{b:8,coda:true}]); P.chords.push(...parseChordBars('| Fm6 | C6 |',SIGS['4/4'],48)); store.set.view='staff'; store.set.min=true; renderAll(); dockSize()`);
+    await b.sleep(150);
+    const n = sel => E(`document.querySelectorAll('#staff ${sel}').length`);
+    ok(await n('use[href="#g-repDots"]') === 4, 'cuatro pares de puntos de repetición', await n('use[href="#g-repDots"]'));
+    ok(await n('use[href="#g-segno"]') === 1 && await n('use[href="#g-coda"]') === 1, 'Segno y Coda');
+    ok(await n('path.vbs') >= 2, 'corchetes de las casillas');
+    const texts = await E(`[...document.querySelectorAll('#staff text.mkt')].map(t=>t.textContent).join('|')`);
+    ok(['1.', '2.', '×3', 'Al Coda', 'Fine', 'D.S. al Coda'].every(t => texts.split('|').includes(t)), 'textos de casillas y del final', texts);
+    ok((await E(`[...document.querySelectorAll('#staff svg.sys')].map(s=>s.getAttribute('aria-label')).join(' ')`)).includes('Compás 3 (casilla 1, fin de repetición, 3 veces)'), 'la descripción del sistema nombra las marcas');
+    // el cifrado no pisa los corchetes de las casillas
+    const clash = await E(`(()=>{ let n=0; document.querySelectorAll('#staff .sysw').forEach(w=>{ const ls=[...w.querySelectorAll('.clab')].map(l=>l.getBoundingClientRect()); w.querySelectorAll('path.vbs').forEach(p=>{ const r=p.getBoundingClientRect(); ls.forEach(l=>{ if(l.bottom>r.top+0.5&&l.top<r.bottom&&l.right>r.left&&l.left<r.right) n++; }); }); }); return n; })()`);
+    ok(clash === 0, 'el cifrado queda por encima de las casillas', clash);
+    // las barras de repetición no pisan las notas
+    const hit = await E(`(()=>{ let n=0; document.querySelectorAll('#staff svg.sys').forEach(sv=>{ const ds=[...sv.querySelectorAll('use[href="#g-repDots"]')].map(u=>u.getBoundingClientRect()); sv.querySelectorAll('.nt use').forEach(u=>{ const r=u.getBoundingClientRect(); ds.forEach(d=>{ if(r.left<d.right-0.5&&r.right>d.left+0.5&&r.top<d.bottom&&r.bottom>d.top) n++; }); }); }); return n; })()`);
+    ok(hit === 0, 'los puntos de repetición no pisan las notas', hit);
+    ok(await E('document.documentElement.scrollWidth') <= w, 'sin desbordar');
+    // en el pentagrama, las marcas se aplican al compás de la nota marcada
+    await E(`selectNote(5)`);
+    ok(await E('ed.mb') === 1, 'la nota marcada elige su compás');
+    await E(`ed.moreF=true; store.set.min=false; renderPalette(); dockSize()`); await b.clickSel('#palette [data-act="mark"][data-k="fine"]');
+    ok(await E('markAt(P,1)?.fine===true && markAt(P,5)?.fine===undefined'), 'Fine se mueve al compás 2 desde el pentagrama');
+  });
+}
+
 done('forma');

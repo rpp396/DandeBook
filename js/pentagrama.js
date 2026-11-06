@@ -22,7 +22,7 @@ function layoutStaff(W){
   const {bars:mel,flat}=melBars(P,N), chs=chordSegs(P,N);
   const y0=Math.round(sp*4.6), H=Math.round(y0+4*sp+sp*4.4); const kN=Math.abs(key.n);
   // compases por sistema: los que quepan con el ancho mínimo del compás más exigente (notas apretadas y cifrado sin solaparse)
-  const needs=mel.map((els,b)=>barNeeds(els,chs[b],sp,key,L,labPx));
+  const needs=mel.map((els,b)=>barNeeds(els,chs[b],sp,key,L,labPx,markAt(P,b)));
   const headFirst=sp*3.9+(kN?kN*sp*1.05+sp*0.5:0)+sp*(sg.top>9?3.9:2.9), maxMin=Math.max(...needs.map(n=>n.minW));
   const cands=W>=660?[4,2,1]:W>=250?[2,1]:[1]; let per=cands[cands.length-1];
   for(const c of cands){ if((W-headFirst-2)/c>=maxMin){ per=c; break; } }
@@ -37,14 +37,14 @@ function layoutStaff(W){
   return {sp,per,y0,H,W,N,L,sys,flat,key,sg,labPx};
 }
 // Anchos de un compás: ws = natural, wsMin = notas apretadas (65 %) con sitio para que cada cifrado no pise al siguiente
-function barNeeds(els,segs,sp,key,L,labPx){
+function barNeeds(els,segs,sp,key,L,labPx,m){
   const mem={};
   for(const e of els){ if(e.rest) continue; const r=((e.s%7)+7)%7; const cur=has(mem,e.s)?mem[e.s]:keyAlter(key,r); e.acc=(e.first&&e.a!==cur)?e.a:null; mem[e.s]=e.a; }
   const on=new Set([0]); els.forEach(e=>on.add(e.t)); segs.forEach(s=>{ if(!s.gap) on.add(s.t); });
   const ts=[...on].sort((a,c)=>a-c); const accAt={}, dotAt={};
   els.forEach(e=>{ if(e.acc!=null) accAt[e.t]=Math.max(accAt[e.t]||0,ACCW[e.acc]); if(DOTTED.includes(e.d)) dotAt[e.t]=1; });
   const ws=ts.map((t,i)=>{ const dur=(i+1<ts.length?ts[i+1]:L)-t; return sp*(1.8+1.9*Math.sqrt(dur/12))+(accAt[t]||0)*sp+(dotAt[t]?sp*0.6:0); });
-  const wsMin=ws.map(w=>w*0.65), padL=sp*1.0, padR=sp*0.5;
+  const wsMin=ws.map(w=>w*0.65), padL=sp*(m?.rs?2.2:1.0), padR=sp*(m?.re?2.0:0.5); // sitio para las barras de repetición
   const heads=segs.filter(s=>!s.gap&&s.head);
   heads.forEach((s,k)=>{
     const last=k+1===heads.length, need=labWidth(P.chords[s.ci],labPx)+(last?2-padR:8), tEnd=last?L:heads[k+1].t;
@@ -130,6 +130,41 @@ function drawBar(bl,Y,tieOut){
   }
   return s+beams.join('');
 }
+/* ---------- Pentagrama: forma ---------- */
+// Barras de cada compás: normal, final, o de repetición (gruesa, fina y puntos). Si el compás siguiente empieza con «‖:», su barra gruesa hace de barra.
+function barLines(sy,Y){
+  const {sp,y0}=Y, tw=sp*0.5, g=sp*0.3, h=4*sp, dw=gw('repDots')*sp; let s='';
+  const thick=x=>`<rect class="blt" x="${r2(x)}" y="${y0}" width="${r2(tw)}" height="${h}"/>`;
+  const thin=x=>`<line class="bl" x1="${r2(x)}" x2="${r2(x)}" y1="${y0}" y2="${y0+h}"/>`;
+  const dots=x=>`<g class="gl">${use('repDots',x,y0+h,sp)}</g>`;
+  sy.bars.forEach((bl,j)=>{
+    const m=markAt(P,bl.b), nx=sy.bars[j+1], nm=nx?markAt(P,nx.b):null, pm=j>0?markAt(P,sy.bars[j-1].b):null;
+    if(m?.rs){ let x=bl.x0; if(!pm?.re){ s+=thick(x); x+=tw; } s+=thin(x+g)+dots(x+g+sp*0.35); }
+    if(m?.re){ const x=bl.x1-tw; s+=thick(x)+thin(x-g)+dots(x-g-sp*0.35-dw); }
+    else if(bl.b===Y.N-1) s+=`${thin(bl.x1-sp*0.75)}<rect class="blt" x="${r2(bl.x1-sp*0.45)}" y="${y0}" width="${r2(sp*0.45)}" height="${h}"/>`;
+    else if(!nm?.rs) s+=thin(bl.x1);
+  });
+  return s;
+}
+const hasBand=sy=>sy.bars.some(bl=>{ const m=markAt(P,bl.b); return !!(m&&(m.v||m.segno||m.coda)); });
+// Casillas, Segno y Coda en una banda encima de las notas (by = línea de la casilla, top = lo más alto de las notas)
+function topMarks(sy,Y,by,top){
+  const {sp}=Y; let s='';
+  sy.bars.forEach((bl,j)=>{
+    const m=markAt(P,bl.b); if(!m) return; let x=bl.x0+sp*0.4;
+    if(m.v){ const pm=j>0?markAt(P,sy.bars[j-1].b):null, nm=markAt(P,bl.b+1), st=pm?.v!==m.v, en=nm?.v!==m.v;
+      const xa=bl.x0+(st?sp*0.3:0), xb=bl.x1-(en?sp*0.3:0), hk=sp*1.4;
+      s+=`<path class="vbs" d="M${r2(xa)} ${r2(st?by+hk:by)}${st?`V${r2(by)}`:''}H${r2(xb)}${en&&m.re?`V${r2(by+hk)}`:''}"/>`;
+      if(st||j===0){ s+=`<text class="mkt" x="${r2(xa+sp*0.35)}" y="${r2(by+sp*1.25)}" font-size="${r2(sp*1.15)}">${m.v}.</text>`; x+=sp*1.8; } }
+    if(m.segno){ s+=`<g class="gl">${use('segno',x,top-sp*0.25,sp*0.55)}</g>`; x+=gw('segno')*sp*0.55+sp*0.3; }
+    if(m.coda) s+=`<g class="gl">${use('coda',x,top-sp*0.5,sp*0.45)}</g>`;
+  });
+  return s;
+}
+// Al Coda, Fine, D.C./D.S. y «×n», debajo del pentagrama al final del compás
+function endMarks(sy,Y){ let s=''; const {sp,H}=Y;
+  sy.bars.forEach(bl=>{ const t=markEndText(markAt(P,bl.b)); if(t) s+=`<text class="mkt" x="${r2(bl.x1-sp*0.3)}" y="${r2(H-sp*0.6)}" font-size="${r2(sp*1.15)}" text-anchor="end">${esc(t)}</text>`; });
+  return s; }
 function tiePath(x1,x2,y,dir){ const w=x2-x1, h=Math.min(8,2.5+w*0.06)*dir, c1=x1+w*0.25, c2=x2-w*0.25, t=1.7*dir;
   return `<path class="tie" d="M${r2(x1)} ${r2(y)}C${r2(c1)} ${r2(y+h)} ${r2(c2)} ${r2(y+h)} ${r2(x2)} ${r2(y)}C${r2(c2)} ${r2(y+h-t)} ${r2(c1)} ${r2(y+h-t)} ${r2(x1)} ${r2(y)}Z"/>`; }
 function renderStaff(){
@@ -161,19 +196,21 @@ function renderStaff(){
       dig(sg.top,y0+sp); dig(sg.bot,y0+3*sp); }
     s+='</g>';
     s+=barsSvg[si];
-    sy.bars.forEach(bl=>{ if(bl.b===Y.N-1){ s+=`<line class="bl" x1="${r2(bl.x1-sp*0.75)}" x2="${r2(bl.x1-sp*0.75)}" y1="${y0}" y2="${y0+4*sp}"/><rect class="blt" x="${r2(bl.x1-sp*0.45)}" y="${y0}" width="${r2(sp*0.45)}" height="${4*sp}"/>`; }
-      else s+=`<line class="bl" x1="${r2(bl.x1)}" x2="${r2(bl.x1)}" y1="${y0}" y2="${y0+4*sp}"/>`; });
+    s+=barLines(sy,Y)+endMarks(sy,Y);
     s+=ties[si];
     if(caret.si===si) s+=`<line class="caret" x1="${r2(caret.x)}" x2="${r2(caret.x)}" y1="${y0-sp*1.2}" y2="${y0+5.2*sp}"/>`;
     s+=`<g class="ghost" visibility="hidden"></g>`;
     let labs='', topY=y0-sp*0.7;
     sy.bars.forEach(bl=>bl.els.forEach(e=>{ if(e.rest) return; let t=e.hy-sp*0.8; if(e.up&&e.d<48) t=Math.min(t,e.tip); if(e.acc!=null) t=Math.min(t,e.hy-sp*2); topY=Math.min(topY,t); }));
-    const labTop=Math.max(0,Math.round(topY-sp*0.3-28));
+    // con casillas, Segno o Coda, una banda encima de las notas; el cifrado sube y, si no cabe, el sistema se aparta del anterior (pad)
+    let pad=0, labTop=Math.max(0,Math.round(topY-sp*0.3-28));
+    if(hasBand(sy)){ const by=topY-sp*2.4; s+=topMarks(sy,Y,by,topY); const raw=Math.round(by-sp*0.4-34); pad=Math.max(0,-raw); labTop=raw+pad; }
     sy.bars.forEach(bl=>bl.segs.forEach(sg2=>{ if(sg2.gap||!sg2.head) return; labs+=`<span class="clab" data-x="${r2(tickToX(bl,sg2.t)-2)}" aria-hidden="true">${chordHTML(P.chords[sg2.ci])}</span>`; }));
-    html+=`<div class="sysw"><div class="chrow" data-top="${labTop}">${labs}</div><svg class="sys" data-s="${si}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(sysLabel(sy))}">${s}</svg></div>`;
+    html+=`<div class="sysw" data-pad="${pad}"><div class="chrow" data-top="${labTop}">${labs}</div><svg class="sys" data-s="${si}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(sysLabel(sy))}">${s}</svg></div>`;
   });
   box.innerHTML=html; box.style.setProperty('--labfs',Y.labPx+'px');
   $$('.clab',box).forEach(el=>{ el.style.left=el.dataset.x+'px'; }); $$('.chrow',box).forEach(el=>{ el.style.top=el.dataset.top+'px'; });
+  $$('.sysw',box).forEach(el=>{ if(+el.dataset.pad) el.style.paddingTop=el.dataset.pad+'px'; });
   markStaff();
 }
 function sysLabel(sy){
@@ -181,8 +218,9 @@ function sysLabel(sy){
   sy.bars.forEach(bl=>{
     const chs=bl.segs.filter(s=>!s.gap&&s.head).map(s=>chordSay(P.chords[s.ci]));
     const ns=bl.els.map(e=>e.mr?'silencio de compás':e.rest?`silencio de ${FIGNAME[e.d]||'figura'}`:`${noteSay(e.s,e.a)} ${FIGNAME[e.d]||''}${e.tie?' ligada':''}`);
-    if(!chs.length&&!ns.length) return;
-    t+=`Compás ${bl.b+1}${chs.length?', '+chs.join(' y '):''}: ${ns.length?ns.join(', '):'sin notas'}. `;
+    const ms=markSay(markAt(P,bl.b));
+    if(!chs.length&&!ns.length&&!ms) return;
+    t+=`Compás ${bl.b+1}${ms?` (${ms})`:''}${chs.length?', '+chs.join(' y '):''}: ${ns.length?ns.join(', '):'sin notas'}. `;
   });
   return t;
 }
