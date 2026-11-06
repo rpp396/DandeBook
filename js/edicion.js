@@ -88,6 +88,13 @@ function markTimes(){ const m=markAt(P,ed.mb); if(!m?.re) return; change(()=>{ e
 function markVolta(n){ const on=markAt(P,ed.mb)?.v!==n; change(()=>{ editMark(o=>{ if(on) o.v=n; else dropKeys(o,'v'); }); },markSayBar); }
 function markJump(go){ const on=markAt(P,ed.mb)?.go!==go;
   change(()=>{ P.marks.forEach(m=>dropKeys(m,'go','al')); editMark(o=>{ if(on){ o.go=go; o.al=''; } }); },markSayBar); }
+// Marcas escritas en «Escribir acordes»: b es relativo al primer compás escrito (base)
+function mergeMarks(list,base){
+  list.forEach(x=>{ const b=base+x.b; if(b>255) return;
+    MARK_ONE.forEach(k=>{ if(has(x,k)) P.marks.forEach(m=>{ dropKeys(m,k); if(k==='go') dropKeys(m,'al'); }); });
+    let o=P.marks.find(m=>m.b===b); if(!o){ o={b}; P.marks.push(o); } Object.assign(o,x,{b}); });
+  P.marks=cleanMarks(P.marks);
+}
 function markAl(al){ const m=markAt(P,ed.mb); if(!m?.go) return; change(()=>{ editMark(o=>{ o.al=o.al===al?'':al; }); },markSayBar); }
 function repIcon(start){ // barra de repetición: gruesa, fina y dos puntos
   const th=start?'<rect x="0" y="0" width="5" height="40"/><rect x="8" y="0" width="2" height="40"/>':'<rect x="17" y="0" width="5" height="40"/><rect x="12" y="0" width="2" height="40"/>';

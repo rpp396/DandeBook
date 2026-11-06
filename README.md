@@ -7,6 +7,7 @@
 ## Qué incluye
 
 - **Grilla de acordes:** compases de 4 en 4 (de 2 en 2 o de 1 en 1 en el móvil si el cifrado no cabe), varios acordes por compás y repetición del compás anterior con `%`.
+- **Repeticiones y saltos:** barras de repetición con sus vueltas, casillas de 1.ª, 2.ª y 3.ª, Segno, Coda, Al Coda, Fine, D.C. y D.S., en la grilla y en el pentagrama, y la reproducción sigue la forma.
 - **Cada acorde con su fundamental, calidad, inversión y duración:** 12 calidades a mano y 15 más (de la tríada mayor al 7alt), inversiones (1.ª, 2.ª, 3.ª) o cualquier otro bajo, y duración en compases, figuras o con puntillo.
 - **Escritura rápida:** `Dm7 G7 | Cmaj7 | % |` y los acordes se reparten solos en los compases. Entiende muchas formas de escribir lo mismo: `Cmaj7`, `C7M`, `CΔ`, `Cm7b5`, `Cø`, `Sol7`, `Sib/Re`…
 - **Pentagrama:** la melodía en clave de sol con el cifrado encima, al estilo de un *Real Book*: alturas, figuras de redonda a semicorchea, puntillos, silencios, ligaduras y alteraciones, con barras de corcheas, ligaduras entre compases y armadura.
@@ -40,6 +41,18 @@ En la paleta (a la derecha; en el móvil, fija abajo como un teclado):
 
 Para cambiar un acorde, tócalo en la grilla y elige otra cosa en la paleta.
 
+### Repeticiones y saltos
+
+Debajo de la paleta, *Repeticiones y saltos* (plegable) pone las marcas de forma en el compás del acorde marcado, o en el compás que hayas tocado, aunque esté vacío:
+
+- **‖:** y **:‖** abren y cierran una repetición; **×2** cambia las vueltas (de 2 a 8). Un «:‖» sin «‖:» vuelve al principio o al final de la repetición anterior.
+- **1. 2. 3.** son las casillas: en cada vuelta se toca la de ese número. Varios compases seguidos con la misma casilla forman una.
+- **Segno** y **Coda** van al principio del compás; **Al Coda**, **Fine**, **D.C.** y **D.S.** al final. *al Fine* y *al Coda* completan el salto.
+
+Segno, Coda, Al Coda, Fine y el salto van una vez por página: ponerlos en otro compás los quita del anterior. Las marcas se quedan en su compás, y si metes o quitas compases enteros en medio de los acordes, las de detrás se mueven con ellos.
+
+Al reproducir se sigue la forma con las convenciones habituales: después de un D.C. o D.S. no se repite y solo se toca la última casilla; entonces «Al Coda» salta a la Coda y Fine termina.
+
 ### Escribir acordes
 
 Debajo de la grilla hay un campo para escribir varios acordes de una vez:
@@ -52,6 +65,9 @@ Debajo de la grilla hay un campo para escribir varios acordes de una vez:
 | `\| C \| % \|` | `%` repite el compás anterior |
 | `\| C - \| G7 \|` | `-` alarga el acorde anterior |
 | `N.C.` | sin acorde |
+| `\|: Dm7 \| G7 x3 :\|` | repetición de tres vueltas (sin `x3`, dos) |
+| `\| 1. C \| 2. F \|` | casillas |
+| `\| Segno C \| G7 Al Coda \| F D.S. al Coda \| Coda C \|` | Segno, Al Coda, D.S. al Coda y Coda (también `𝄋`, `𝄌`, `Fine`, `D.C.`, `D.C. al Fine`) |
 
 Acepta cifrado americano y latino (`Sol7`, `Sib/Re`, `Lam`) y las grafías habituales: `maj7`, `M7`, `7M`, `Δ`, `^`; `m`, `-`, `min`; `m7b5`, `ø`, `m7(b5)`; `dim`, `°`, `o`; `aug`, `+`; `sus`, `sus2`, `7sus4`; `6/9`, `add9`, `7(b9)`, `7#11`, `alt`…
 
@@ -65,7 +81,7 @@ La app escribe sola las barras de las corcheas y semicorcheas por pulso, las not
 
 ### Escuchar, transportar y el cuaderno
 
-- **Reproducir** suena con lo elegido en *Acordes*, *Melodía*, *Metrónomo* y *Bucle*; la grilla y el pentagrama marcan lo que suena. En bucle, los cambios se oyen en la vuelta siguiente.
+- **Reproducir** suena con lo elegido en *Acordes*, *Melodía*, *Metrónomo* y *Bucle*, siguiendo las repeticiones y los saltos; la grilla y el pentagrama marcan lo que suena. En bucle, los cambios se oyen en la vuelta siguiente.
 - **Transportar** cambia el tono de la página y mueve acordes, bajos y melodía por el camino más corto. En el tritono (por ejemplo, de C a G♭ o F♯), la melodía sube o baja según cuál la deje más cerca del centro del pentagrama, así que ir y volver no la cambia de octava.
 - **Páginas:** *Nueva página*, *Duplicar* y *Borrar* (pide confirmación). Cada cambio se guarda solo, y se puede deshacer hasta 100 pasos por página.
 - **Texto:** *Copiar la página como texto* da algo así, que se puede pegar en *Texto para importar* para crear una página nueva:
@@ -78,6 +94,8 @@ La app escribe sola las barras de las corcheas y semicorcheas por pulso, las not
   | Em7 A7 | Dm7 G7 | C6 | C6 |
   Melodía: F4q A4q C5q E5q | D5h B4q G4q | …
   ```
+
+  Las repeticiones y los saltos se escriben dentro de los compases, como en *Escribir acordes*: `|: Segno Dm7 | 1. G7 x3 :| 2. C Fine |`.
 
   En la melodía: nota, alteración (`#`, `b`), octava (C4 es el do central) y figura (`w` redonda, `h` blanca, `q` negra, `e` corchea, `s` semicorchea), `.` para el puntillo y `~` para ligar con la siguiente; `rq` es un silencio de negra.
 
@@ -120,7 +138,7 @@ Además: <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace, <kbd>Ctrl</kbd>+<kbd>Mayús</kbd>
 
 ## Pruebas
 
-Hay una batería de pruebas de navegador en `tests/` (unas 260 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, transporte, texto, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
+Hay una batería de pruebas de navegador en `tests/` (unas 380 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, repeticiones y saltos, transporte, texto, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
 
 ```
 npm test                    # equivale a: node tests/run.mjs

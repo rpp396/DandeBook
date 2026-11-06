@@ -82,9 +82,9 @@ function bind(){
       const L=SIGS[P.sig].L, at=startOf(P.chords,ed.cs+1), rem=(L-at%L)%L, bars=txt.includes('|');
       let src=txt, ext=0;
       if(bars&&rem&&/^\|/.test(src)){ if(ed.cs<0) throw new Error('No hay ningún acorde antes que alargar'); ext=rem; src=src.replace(/^\|\s*/,''); }
-      const list=src.trim()?parseChordBars(src,SIGS[P.sig],ed.cdur,bars&&rem&&!ext?rem:0,bars):[];
+      const mk=[], list=src.trim()?parseChordBars(src,SIGS[P.sig],ed.cdur,bars&&rem&&!ext?rem:0,bars,mk):[];
       if(!list.length&&!ext) return;
-      change(()=>{ if(ext) P.chords[ed.cs].d+=ext; marksShift(ed.cs+1,sumD(list)); P.chords.splice(ed.cs+1,0,...list); ed.cs+=list.length; },()=>`Añadidos ${list.length} acordes`);
+      change(()=>{ if(ext) P.chords[ed.cs].d+=ext; const at=startOf(P.chords,ed.cs+1); marksShift(ed.cs+1,sumD(list)); P.chords.splice(ed.cs+1,0,...list); if(mk.length) mergeMarks(mk,Math.floor(at/L)); ed.cs+=list.length; },()=>`Añadidos ${list.length} acordes`);
       inp.value=''; msg.textContent=`Añadido: ${list.map(chordText).join(' ')}`; msg.className='wmsg';
     }catch(err){ msg.textContent=err.message; msg.className='wmsg err'; }
   });
