@@ -151,6 +151,24 @@ input.ptitle:hover,input.ptitle:focus{border-color:var(--ui)}
 .seg.caret-after::before{right:0}
 .seg.caret-before::before{left:0}
 @keyframes blink{to{visibility:hidden}}
+/* forma: barras de repetición (gruesa, fina y dos puntos), casillas, Segno, Coda y textos del final del compás */
+.grid.hasv{padding-top:12px}
+.rp{position:absolute;top:0;bottom:0;width:12px;z-index:1;pointer-events:none;forced-color-adjust:none;
+  --dot:radial-gradient(circle,var(--ink) 1.9px,transparent 2.5px)}
+.rp.l{left:-1.5px;border-left:4px solid var(--ink);
+  background:linear-gradient(var(--ink),var(--ink)) left 2px top 0/1.5px 100% no-repeat,var(--dot) left 4px top 38%/6px 6px no-repeat,var(--dot) left 4px top 62%/6px 6px no-repeat}
+.rp.r{right:-1.5px;border-right:4px solid var(--ink);
+  background:linear-gradient(var(--ink),var(--ink)) right 2px top 0/1.5px 100% no-repeat,var(--dot) right 4px top 38%/6px 6px no-repeat,var(--dot) right 4px top 62%/6px 6px no-repeat}
+.bar.mrs .segs,.bar.mrs .beats{padding-left:12px}
+.bar.mre .segs,.bar.mre .beats{padding-right:12px}
+.vb{position:absolute;left:0;right:0;top:-10px;height:10px;border-top:1.5px solid var(--ink);pointer-events:none}
+.vb.st{border-left:1.5px solid var(--ink);left:2px}
+.vb b{position:absolute;left:4px;top:-1px;font:700 10px/1 var(--sans);color:var(--ink)}
+.mks{position:absolute;top:0;left:24px;display:flex;gap:3px;color:var(--ink);pointer-events:none}
+.mg{height:15px;width:auto;fill:currentColor}
+.grid.hase{padding-bottom:6px}
+.mke{position:absolute;bottom:-15px;right:2px;white-space:nowrap;font:italic 700 11px/1.2 var(--sans);color:var(--ink);pointer-events:none}
+.rpn{position:absolute;top:1px;right:14px;font:italic 700 11px/1.2 var(--sans);color:var(--ink);pointer-events:none}
 .beats{display:flex;height:9px;align-items:center;padding:0 4px}
 .beats i{flex:1 1 0;position:relative}
 .beats i::before{content:"";position:absolute;left:2px;top:-1.5px;width:3px;height:3px;border-radius:50%;background:var(--ui)}
@@ -227,6 +245,12 @@ svg.sys{display:block;touch-action:pan-y;overflow:visible;user-select:none;-webk
 .figs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
 .nrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
 .mrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.fold{align-self:flex-start;background:none;border:0;color:var(--accent);font-weight:700;cursor:pointer;padding:4px 0;min-height:32px}
+.forms{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.forms .k{font-size:13px;white-space:nowrap;padding:0 3px}
+.forms .k.w2{grid-column:span 2}
+.forms .k .mg{height:20px}
+.forms .k .ric{height:22px;width:auto;fill:currentColor}
 .mobonly{display:none}
 .mrow .k,.nrow .k{font-size:13px}
 .nrow .k.hand{font-size:22px}
@@ -252,6 +276,7 @@ svg.sys{display:block;touch-action:pan-y;overflow:visible;user-select:none;-webk
   .chip{min-height:40px}
   .step{width:40px;height:40px}
   .views button{min-height:44px}
+  .fold{min-height:44px}
 }
 @media (max-width:920px){
   .panel{position:static}

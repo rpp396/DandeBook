@@ -73,7 +73,7 @@ const DEF_SET={style:'pop',names:'us',simile:true,view:'grid',chords:true,melody
 let store={pages:[],cur:'',gone:[],set:{...DEF_SET}};
 let P=null;
 // cdot / ndot: el puntillo de la paleta de acordes y de notas es un interruptor que se mantiene; empieza activado en compás compuesto
-const ed={cs:-1,ns:-1,rootMode:'add',bassMode:false,accTo:'root',cdur:48,ndur:12,cdot:false,ndot:false,moreQ:false};
+const ed={cs:-1,ns:-1,rootMode:'add',bassMode:false,accTo:'root',cdur:48,ndur:12,cdot:false,ndot:false,moreQ:false,mb:0,moreF:false};
 const hist=new Map();
 let saveState='local';
 

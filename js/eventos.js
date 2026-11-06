@@ -61,13 +61,17 @@ function bind(){
       case 'rest': noteRest(); break; case 'tie': noteTie(); break;
       case 'nacc': noteAcc(+b.dataset.a); break;
       case 'step': noteStep(+b.dataset.v); break; case 'oct': noteOct(+b.dataset.v); break;
+      case 'mark': markToggle(b.dataset.k); break; case 'times': markTimes(); break;
+      case 'volta': markVolta(+b.dataset.n); break; case 'jump': markJump(b.dataset.go); break; case 'al': markAl(b.dataset.al); break;
     }
   });
+  $('#moreF').addEventListener('click',()=>{ ed.moreF=!ed.moreF; renderPalette(); dockSize(); });
   $('#moreQ').addEventListener('click',()=>{ ed.moreQ=!$('#quals').classList.contains('open'); renderPalette(); });
   $('#grid').addEventListener('click',e=>{
     const s=e.target.closest('.seg'); const bar=e.target.closest('.bar');
-    if(s&&!s.classList.contains('gap')){ selectChord(+s.dataset.ci,true); return; }
-    if(bar){ selectChord(P.chords.length-1,true); }
+    const bi=bar?+bar.dataset.b:null;
+    if(s&&!s.classList.contains('gap')){ selectChord(+s.dataset.ci,true,bi); return; }
+    if(bar){ selectChord(P.chords.length-1,true,bi); }
   });
   bindStaff();
   document.addEventListener('keydown',onKey);
@@ -80,7 +84,7 @@ function bind(){
       if(bars&&rem&&/^\|/.test(src)){ if(ed.cs<0) throw new Error('No hay ningún acorde antes que alargar'); ext=rem; src=src.replace(/^\|\s*/,''); }
       const list=src.trim()?parseChordBars(src,SIGS[P.sig],ed.cdur,bars&&rem&&!ext?rem:0,bars):[];
       if(!list.length&&!ext) return;
-      change(()=>{ if(ext) P.chords[ed.cs].d+=ext; P.chords.splice(ed.cs+1,0,...list); ed.cs+=list.length; },()=>`Añadidos ${list.length} acordes`);
+      change(()=>{ if(ext) P.chords[ed.cs].d+=ext; marksShift(ed.cs+1,sumD(list)); P.chords.splice(ed.cs+1,0,...list); ed.cs+=list.length; },()=>`Añadidos ${list.length} acordes`);
       inp.value=''; msg.textContent=`Añadido: ${list.map(chordText).join(' ')}`; msg.className='wmsg';
     }catch(err){ msg.textContent=err.message; msg.className='wmsg err'; }
   });

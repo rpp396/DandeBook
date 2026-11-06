@@ -22,6 +22,7 @@ for (const [w, h] of [[390, 844], [320, 640]]) {
     ok(await E(`parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dockH'))`) < 90, `${w}px: el hueco inferior sigue a la paleta`);
     await b.tap(mn.cx, (await b.rect('[data-act="min"]')).cy); await b.sleep(120);
     // pentagrama: tocar inserta
+    await E(`document.querySelector('#vStaff').scrollIntoView({block:'center',behavior:'instant'})`); await b.sleep(80); // la paleta fija puede haber desplazado la página
     await b.tap((await b.rect('#vStaff')).cx, (await b.rect('#vStaff')).cy); await b.sleep(200);
     await E(`document.querySelector('#staff').scrollIntoView({block:'start'})`); await b.sleep(80);
     const pos = await E(`(()=>{ const sv=document.querySelector('#staff svg.sys'); const r=sv.getBoundingClientRect(); const bl=ST.sys[0].bars[0]; return {x:r.left+bl.xs[0]+ST.sp, y:r.top+ST.y0+2*ST.sp}; })()`);
