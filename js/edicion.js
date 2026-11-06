@@ -4,8 +4,8 @@
 
 /* ---------- Edición ---------- */
 function H(){ let h=hist.get(P.id); if(!h){ h={u:[],r:[]}; hist.set(P.id,h); } return h; }
-function snap(){ return JSON.stringify({chords:P.chords,notes:P.notes,sig:P.sig,key:P.key,cs:ed.cs,ns:ed.ns}); }
-function restore(s){ const o=JSON.parse(s); P.chords=o.chords; P.notes=o.notes; P.sig=o.sig; P.key=o.key; ed.cs=o.cs; ed.ns=o.ns; }
+function snap(){ return JSON.stringify({chords:P.chords,notes:P.notes,marks:P.marks,sig:P.sig,key:P.key,cs:ed.cs,ns:ed.ns}); }
+function restore(s){ const o=JSON.parse(s); P.chords=o.chords; P.notes=o.notes; P.marks=o.marks; P.sig=o.sig; P.key=o.key; ed.cs=o.cs; ed.ns=o.ns; }
 function change(fn,msg){ const before=snap(); const ok=fn(); if(ok===false) return; const h=H(); h.u.push(before); if(h.u.length>100) h.u.shift(); h.r.length=0; commit(); if(msg) say(typeof msg==='function'?msg():msg); }
 function commit(){ clampSel(); touch(P); renderAll(); saveSoon(); revealSel(); }
 function revealSel(){
