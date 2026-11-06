@@ -62,4 +62,79 @@ await part('Deshacer las marcas', { width: 1280, height: 900 }, async (b, E) => 
   await E('redo()'); ok(await E(`P.marks.length===1 && P.marks[0].re===2`), 'rehacer la vuelve a poner');
 });
 
+await part('Grilla y paleta', { width: 1280, height: 900 }, async (b, E) => {
+  const pal = s => b.clickSel('#palette ' + s);
+  ok(await E(`document.querySelector('#forms').hidden && document.querySelector('#moreF').getAttribute('aria-expanded')==='false'`), 'la sección «Repeticiones y saltos» empieza plegada');
+  await b.clickSel('#moreF');
+  ok(await E(`!document.querySelector('#forms').hidden && document.querySelector('#moreF').textContent.includes('compás')`), 'se despliega y dice a qué compás se aplica');
+  // tocar el compás 3 de la grilla (Cmaj7) y ponerle «‖:»
+  await b.clickSel('#grid .bar[data-b="2"] .seg.head');
+  ok(await E('ed.mb') === 2, 'tocar un compás lo elige para las marcas');
+  await pal('[data-act="mark"][data-k="rs"]');
+  ok(await E('JSON.stringify(P.marks)') === '[{"b":2,"rs":true}]', '«‖:» en el compás 3', await E('JSON.stringify(P.marks)'));
+  ok(await E(`!!document.querySelector('#grid .bar[data-b="2"] .rp.l') && document.querySelector('[data-act="mark"][data-k="rs"]').getAttribute('aria-pressed')==='true'`), 'la grilla la dibuja y el botón queda pulsado');
+  ok((await E(`document.querySelector('#grid .bar[data-b="2"] .seg').getAttribute('aria-label')`)).startsWith('Compás 3 (inicio de repetición)'), 'el nombre del compás la anuncia');
+  await b.clickSel('#grid .bar[data-b="3"] .seg.head');
+  await pal('[data-act="mark"][data-k="re"]'); await pal('[data-act="times"]');
+  ok(await E('JSON.stringify(markAt(P,3))') === '{"b":3,"re":3}', '«:‖» y ×3 en el compás 4', await E('JSON.stringify(markAt(P,3))'));
+  ok(await E(`document.querySelector('#grid .bar[data-b="3"] .rpn').textContent==='×3' && document.querySelector('[data-act="times"]').textContent==='×3'`), 'se ve ×3');
+  for (let i = 0; i < 6; i++) await pal('[data-act="times"]');
+  ok(await E('markAt(P,3).re') === 2, 'las vueltas dan la vuelta de 8 a 2');
+  // casillas
+  await pal('[data-act="volta"][data-n="1"]');
+  ok(await E('markAt(P,3).v') === 1 && await E(`document.querySelector('#grid .bar[data-b="3"] .vb.st b').textContent`) === '1.', 'casilla 1 con su corchete');
+  await pal('[data-act="volta"][data-n="1"]'); ok(await E('markAt(P,3).v') === undefined, 'tocarla otra vez la quita');
+  // Segno: uno por página, se mueve
+  await pal('[data-act="mark"][data-k="segno"]');
+  await b.clickSel('#grid .bar[data-b="1"] .seg.head'); await pal('[data-act="mark"][data-k="segno"]');
+  ok(await E(`P.marks.filter(m=>m.segno).map(m=>m.b).join()`) === '1', 'el Segno se mueve al compás nuevo', await E('JSON.stringify(P.marks)'));
+  ok(await E(`!!document.querySelector('#grid .bar[data-b="1"] .mks svg use[href="#g-segno"]')`), 'se dibuja el glifo del Segno');
+  // D.S. al Coda: los botones «al…» solo con salto
+  await b.clickSel('#grid .bar[data-b="5"] .seg.head');
+  ok(await E(`document.querySelector('[data-act="al"][data-al="coda"]').disabled`), 'sin salto, «al Coda» está apagado');
+  await pal('[data-act="jump"][data-go="ds"]'); await pal('[data-act="al"][data-al="coda"]');
+  ok(await E('JSON.stringify(markAt(P,5))') === '{"b":5,"go":"ds","al":"coda"}', 'D.S. al Coda en el compás 6', await E('JSON.stringify(markAt(P,5))'));
+  ok(await E(`document.querySelector('#grid .bar[data-b="5"] .mke').textContent`) === 'D.S. al Coda', 'el texto se ve en la grilla');
+  await pal('[data-act="jump"][data-go="dc"]');
+  ok(await E('JSON.stringify(markAt(P,5))') === '{"b":5,"go":"dc","al":""}', 'D.C. sustituye al D.S.');
+  await b.sleep(80); ok((await E(`document.querySelector('#sr').textContent`)) === 'Compás 6: da capo', 'lo anuncia', await E(`document.querySelector('#sr').textContent`));
+  await pal('[data-act="jump"][data-go="dc"]'); ok(await E('markAt(P,5)') === null, 'tocar D.C. otra vez lo quita y el compás queda sin marcas');
+  // deshacer
+  await E('undo()'); ok(await E('markAt(P,5)?.go') === 'dc', 'deshacer devuelve el D.C.');
+  // un compás vacío también se puede marcar
+  await b.clickSel('#grid .bar[data-b="10"]');
+  ok(await E('ed.mb') === 10, 'un compás vacío se elige al tocarlo');
+  await pal('[data-act="mark"][data-k="fine"]');
+  ok(await E('markAt(P,10)?.fine') === true, 'Fine en un compás vacío');
+  // el % no sale en el primer compás de una sección
+  await E(`P.chords=parseChordBars('| C | C | C | C |',SIGS['4/4'],48); P.marks=cleanMarks([{b:2,rs:true}]); renderAll()`);
+  ok(await E(`[...document.querySelectorAll('#grid .bar')].slice(0,4).map(x=>x.querySelector('.seg.sim')?1:0).join('')`) === '0101', 'el % no sale en el compás con «‖:»', await E(`[...document.querySelectorAll('#grid .bar')].slice(0,4).map(x=>x.querySelector('.seg.sim')?1:0).join('')`));
+});
+
+await part('Las marcas siguen a sus compases', { width: 1280, height: 900 }, async (b, E) => {
+  await E(`P.chords=parseChordBars('| C | F | G | C |',SIGS['4/4'],48); P.marks=cleanMarks([{b:1,re:2},{b:2,rs:true},{b:3,fine:true}]); ed.cs=0; renderAll()`);
+  await E(`insertChord({r:1,a:0,q:'m',d:48})`); // un compás nuevo detrás del primero
+  ok(await E(`P.marks.map(m=>m.b).join()`) === '2,3,4', 'meter un compás entero en medio mueve las marcas de detrás', await E('JSON.stringify(P.marks)'));
+  await E(`ed.cs=1; delChord()`);
+  ok(await E(`P.marks.map(m=>m.b).join()`) === '1,2,3', 'quitarlo las devuelve', await E('JSON.stringify(P.marks)'));
+  await E(`ed.cs=0; insertChord({r:1,a:0,q:'m',d:24})`);
+  ok(await E(`P.marks.map(m=>m.b).join()`) === '1,2,3', 'medio compás no mueve nada');
+  await E('undo()');
+  await E(`ed.cs=P.chords.length-1; insertChord({r:4,a:0,q:'7',d:48})`);
+  ok(await E(`P.marks.map(m=>m.b).join()`) === '1,2,3', 'añadir al final no mueve nada');
+  await E(`P.marks=cleanMarks([{b:4,rs:true}]); ed.cs=P.chords.length-1; document.querySelector('#wIn').value='| D | E |'; document.querySelector('#wForm').requestSubmit()`);
+  ok(await E(`P.marks.map(m=>m.b).join()`) === '4', 'escribir al final tampoco: la marca puesta en un compás vacío espera a sus acordes');
+  await E(`P.marks=cleanMarks([{b:2,rs:true}]); ed.cs=0; document.querySelector('#wIn').value='| D | E |'; document.querySelector('#wForm').requestSubmit()`);
+  ok(await E(`P.marks.map(m=>m.b).join()`) === '4', 'escribir dos compases en medio mueve las marcas dos compases');
+});
+
+await part('Forma en el móvil', { width: 320, height: 700, mobile: true, scale: 2 }, async (m, E) => {
+  await E(`P.marks=cleanMarks([{b:0,rs:true,segno:true},{b:2,v:1,re:3},{b:3,v:2,tocoda:true},{b:5,fine:true},{b:7,go:'ds',al:'coda'},{b:8,coda:true}]); ed.moreF=true; renderAll(); dockSize();`);
+  await m.sleep(150);
+  ok(await E(`[...document.querySelectorAll('#forms button, #moreF')].filter(b=>b.getBoundingClientRect().height<43.5).length`) === 0, 'móvil: botones de 44 px');
+  ok(await E(`[...document.querySelectorAll('#forms button')].every(b=>b.scrollWidth<=b.clientWidth+1)`), 'móvil: los textos caben en los botones');
+  ok(await E('document.documentElement.scrollWidth') <= 320, 'móvil: sin desbordar');
+  ok(await E(`[...document.querySelectorAll('#grid .mke')].every(e=>{ const r=e.getBoundingClientRect(), g=document.querySelector('#sheet').getBoundingClientRect(); return r.left>=g.left&&r.right<=g.right; })`), 'móvil: los textos del final caben en la hoja');
+});
+
 done('forma');

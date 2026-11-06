@@ -252,3 +252,15 @@ function formPath(p,n=formBars(p)){
   }
   return path;
 }
+// Nombre de los saltos en pantalla y en voz
+const JUMP_TXT={dc:'D.C.',ds:'D.S.'}, AL_TXT={'':'',fine:' al Fine',coda:' al Coda'};
+const JUMP_SAY={dc:'da capo',ds:'dal segno'}, AL_SAY={'':'',fine:' al fine',coda:' al coda'};
+// Lo que se lee al final del compás: vueltas, Al Coda, Fine y el salto
+function markEndText(m,times=true){ const t=[]; if(!m) return ''; if(times&&m.re>2) t.push(`×${m.re}`); if(m.tocoda) t.push('Al Coda'); if(m.fine) t.push('Fine'); if(m.go) t.push(JUMP_TXT[m.go]+AL_TXT[m.al||'']); return t.join(' · '); }
+function markSay(m){
+  if(!m) return ''; const t=[];
+  if(m.segno) t.push('segno'); if(m.coda) t.push('coda'); if(m.rs) t.push('inicio de repetición'); if(m.v) t.push(`casilla ${m.v}`);
+  if(m.re) t.push(`fin de repetición${m.re>2?`, ${m.re} veces`:''}`); if(m.tocoda) t.push('al coda'); if(m.fine) t.push('fine');
+  if(m.go) t.push(JUMP_SAY[m.go]+AL_SAY[m.al||'']);
+  return t.join(', ');
+}
