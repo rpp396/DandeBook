@@ -78,7 +78,7 @@ const hist=new Map();
 let saveState='local';
 
 function uid(){ let s=''; const a='abcdefghijklmnopqrstuvwxyz0123456789'; const r=new Uint8Array(12); crypto.getRandomValues(r); r.forEach(v=>{s+=a[v%36];}); return s; }
-function newPage(title){ const t=Date.now(); return {id:uid(),title,sig:'4/4',bpm:100,key:'C',chords:[],notes:[],created:t,updated:t}; }
+function newPage(title){ const t=Date.now(); return {id:uid(),title,sig:'4/4',bpm:100,key:'C',chords:[],notes:[],marks:[],created:t,updated:t}; }
 function cleanChord(c){
   if(!isObj(c)) return null; const d=intIn(c.d,3,288,null); if(d===null||d%3) return null;
   if(c.nc===true) return {nc:true,d};
@@ -92,6 +92,24 @@ function cleanNote(n){
   const o={s:intIn(n.s,14,56,34),a:intIn(n.a,-2,2,0),d,rest:n.rest===true,tie:n.tie===true};
   return o;
 }
+// Signos de repetición y saltos de un compás: {b, rs, re, v, segno, coda, tocoda, fine, go, al}. Solo una marca por compás
+// y un Segno, una Coda, un «Al Coda», un Fine y un salto (D.C. o D.S.) por página: si vienen repetidos, vale el primero.
+const MARK_ONE=['segno','coda','tocoda','fine','go'];
+function cleanMarks(list){
+  const out=[], seen=new Set(), one=new Set();
+  for(const m of Array.isArray(list)?list.slice(0,256):[]){
+    if(!isObj(m)) continue; const b=intIn(m.b,0,255,null); if(b===null||seen.has(b)) continue;
+    const o={b};
+    if(m.rs===true) o.rs=true;
+    if(m.re!==undefined){ const n=intIn(m.re,2,8,null); if(n!==null) o.re=n; }
+    if(m.v!==undefined){ const n=intIn(m.v,1,4,null); if(n!==null) o.v=n; }
+    ['segno','coda','tocoda','fine'].forEach(k=>{ if(m[k]===true) o[k]=true; });
+    const go=oneOf(m.go,['dc','ds'],null); if(go){ o.go=go; o.al=oneOf(m.al,['','fine','coda'],''); }
+    MARK_ONE.forEach(k=>{ if(!has(o,k)) return; if(one.has(k)){ delete o[k]; if(k==='go') delete o.al; } else one.add(k); });
+    if(Object.keys(o).length>1){ out.push(o); seen.add(b); }
+  }
+  return out.sort((x,y)=>x.b-y.b);
+}
 function cleanPage(p){
   if(!isObj(p)||typeof p.id!=='string'||!/^[a-z0-9]{4,24}$/.test(p.id)) return null;
   const num=v=>Number.isFinite(v)&&v>0?v:Date.now();
@@ -100,6 +118,7 @@ function cleanPage(p){
     key:typeof p.key==='string'&&has(KEYMAP,p.key)?p.key:'C',
     chords:(Array.isArray(p.chords)?p.chords.slice(0,512):[]).map(cleanChord).filter(Boolean),
     notes:(Array.isArray(p.notes)?p.notes.slice(0,1024):[]).map(cleanNote).filter(Boolean),
+    marks:cleanMarks(p.marks),
     created:num(p.created),updated:num(p.updated)};
   if(p.ex===true) o.ex=true; if(p.del===true) o.del=true;
   return o;

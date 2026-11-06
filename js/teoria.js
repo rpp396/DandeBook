@@ -191,7 +191,7 @@ function importText(txt){
   return p;
 }
 /* ---------- Reparto en compases ---------- */
-function barCount(p){ const L=SIGS[p.sig].L; const content=Math.ceil(Math.max(sumD(p.chords),sumD(p.notes))/L); return Math.min(256,Math.max(8,Math.ceil((content+1)/4)*4)); }
+function barCount(p){ const content=formBars(p); return Math.min(256,Math.max(8,Math.ceil((content+1)/4)*4)); }
 function chordSegs(p,N){
   const L=SIGS[p.sig].L; const st=[]; let t=0; p.chords.forEach(c=>{ st.push(t); t+=c.d; });
   const bars=[];
@@ -219,3 +219,36 @@ function melBars(p,N){
   return {bars,flat};
 }
 const startOf=(arr,i)=>{ let t=0; for(let k=0;k<i;k++) t+=arr[k].d; return t; };
+/* ---------- Forma: repeticiones y saltos ---------- */
+const FORM_MAX=1024; // compases como mucho en el recorrido (protege de bucles con datos raros)
+// Compases con contenido o con alguna marca
+function formBars(p){ const L=SIGS[p.sig].L; const content=Math.ceil(Math.max(sumD(p.chords),sumD(p.notes))/L); const m=p.marks||[]; return Math.max(content,m.length?m[m.length-1].b+1:0); }
+const markAt=(p,b)=>(p.marks||[]).find(m=>m.b===b)||null;
+// Orden en que suenan los compases 0…n−1. Convenciones: «:‖» con n vueltas vuelve al «‖:» anterior (o al principio);
+// en cada vuelta se toca la casilla de ese número (la última si hay más vueltas que casillas). D.C. y D.S. saltan una sola
+// vez y, después del salto, no se repite y solo se toca la última casilla; entonces «Al Coda» lleva a la Coda y Fine termina.
+function formPath(p,n=formBars(p)){
+  const ms=(p.marks||[]).filter(m=>m.b<n), M=new Map(ms.map(m=>[m.b,m]));
+  const at=k=>{ const m=ms.find(x=>x[k]); return m?m.b:-1; };
+  const segno=at('segno'), coda=at('coda');
+  const vmax=new Map(); // número más alto de casilla en cada tramo de casillas seguidas
+  for(let b=0;b<n;){ if(!M.get(b)?.v){ b++; continue; } let e=b, mx=0; while(e<n&&M.get(e)?.v){ mx=Math.max(mx,M.get(e).v); e++; } for(let k=b;k<e;k++) vmax.set(k,mx); b=e; }
+  const path=[]; let b=0, start=0, pass=1, jumped=false, back=false, inV=false, toCoda=false;
+  while(b<n&&path.length<FORM_MAX){
+    const m=M.get(b)||{}, wasBack=back; back=false;
+    if(m.rs&&!jumped&&!wasBack){ start=b; pass=1; }
+    // pass = vuelta de la sección que se repite; al salir de un tramo de casillas empieza otra sección
+    if(m.v){ inV=true; const want=jumped?vmax.get(b):Math.min(pass,vmax.get(b)); if(m.v!==want){ b++; continue; } }
+    else if(inV){ inV=false; if(!wasBack&&!jumped){ start=b; pass=1; } }
+    path.push(b);
+    if(jumped&&m.fine) break;
+    if(jumped&&m.tocoda&&!toCoda&&coda>=0&&coda!==b){ toCoda=true; b=coda; continue; }
+    if(m.re&&!jumped){
+      if(pass<m.re){ pass++; b=start; back=true; continue; }
+      start=b+1; if(!M.get(b+1)?.v) pass=1;
+    }
+    if(m.go&&!jumped){ const t=m.go==='dc'?0:segno; if(t>=0){ jumped=true; b=t; continue; } }
+    b++;
+  }
+  return path;
+}
