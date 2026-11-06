@@ -137,4 +137,42 @@ await part('Forma en el móvil', { width: 320, height: 700, mobile: true, scale:
   ok(await E(`[...document.querySelectorAll('#grid .mke')].every(e=>{ const r=e.getBoundingClientRect(), g=document.querySelector('#sheet').getBoundingClientRect(); return r.left>=g.left&&r.right<=g.right; })`), 'móvil: los textos del final caben en la hoja');
 });
 
+await part('Sonido con la forma', { width: 1280, height: 900 }, async (b, E) => {
+  // espía: qué acordes, notas y clics se programan y cuándo (en ticks desde el principio de la pasada)
+  const spy = `(()=>{ ensureAudio(); A.bus=A.ctx.createGain(); A.spt=60/(P.bpm*SIGS[P.sig].beat); const t0=A.ctx.currentTime+5, log={c:[],n:[],k:0};
+    const tk=t=>Math.round((t-t0)/A.spt), oc=playChord, ov=voice, ok=click;
+    window.playChord=(c,t,d,v)=>log.c.push(chordText(c)+'@'+tk(t)+(v<1?'~':''));
+    window.voice=(dst,f,t,d)=>log.n.push(tk(t)+'+'+Math.round((d+0.03)/A.spt));
+    window.click=()=>{ log.k++; };
+    try{ schedulePass(t0,passPath()); } finally { window.playChord=oc; window.voice=ov; window.click=ok; }
+    return JSON.stringify(log); })()`;
+  await E(`P.chords=parseChordBars('| C | F | G |',SIGS['4/4'],48); P.notes=[]; P.marks=cleanMarks([{b:1,re:2}]); store.set.melody=true; store.set.chords=true; store.set.metro=true; renderAll()`);
+  let log = JSON.parse(await E(spy));
+  ok(log.c.join(' ') === 'C@0 F@48 C@96 F@144 G@192', 'los acordes siguen la repetición', log.c);
+  ok(log.k === 20, 'el metrónomo cubre los 5 compases del recorrido', log.k);
+  ok(await E('passTicks()') === 240, 'la pasada dura 5 compases');
+  // D.S. al Coda
+  await E(`P.chords=parseChordBars('| C | F | G | A | D | E |',SIGS['4/4'],48); P.marks=cleanMarks([{b:1,segno:true},{b:2,tocoda:true},{b:3,go:'ds',al:'coda'},{b:4,coda:true}]); store.set.metro=false`);
+  log = JSON.parse(await E(spy));
+  ok(log.c.join(' ') === 'C@0 F@48 G@96 A@144 F@192 G@240 D@288 E@336', 'D.S. al Coda', log.c);
+  // un acorde de dos compases: si se vuelve a su segundo compás tras un salto, se ataca de nuevo
+  await E(`P.chords=parseChordBars('| C | - | G |',SIGS['4/4'],48); P.marks=cleanMarks([{b:1,rs:true},{b:2,re:2}])`);
+  log = JSON.parse(await E(spy));
+  ok(log.c.join(' ') === 'C@0 C@48~ G@96 C@144 G@192', 'el acorde que cruza la barra se vuelve a atacar al repetir', log.c);
+  // ligadura hacia un compás que no sigue en la forma: se corta
+  await E(`P.chords=[]; P.notes=parseMelody('C4w~ | C4w | E4w'); P.marks=cleanMarks([{b:0,re:2}])`);
+  log = JSON.parse(await E(spy));
+  ok(log.n.join(' ') === '0+48 48+96 144+48', 'la ligadura solo sigue con el compás que suena después', log.n);
+
+  // la grilla marca lo que suena aunque la forma vuelva atrás
+  await E(`P.chords=parseChordBars('| C | F | G |',SIGS['4/4'],48); P.notes=[]; P.marks=cleanMarks([{b:1,re:2}]); store.set.loop=false; renderAll()`);
+  await b.clickSel('#bPlay'); await b.sleep(300);
+  ok(await E('JSON.stringify(A.path)') === '[0,1,0,1,2]', 'la reproducción lleva el recorrido');
+  const at = async k => { await E(`A.t0=A.ctx.currentTime-(${k}*48+6)*A.spt`); await b.sleep(120); return E(`[...document.querySelectorAll('#grid .seg.now')].map(x=>x.dataset.ci).join()`); };
+  ok(await at(1) === '1', 'lugar 2 del recorrido: suena F');
+  ok(await at(2) === '0', 'lugar 3: vuelve a C', await at(2));
+  ok(await at(4) === '2', 'lugar 5: G');
+  await E('stop()');
+});
+
 done('forma');
