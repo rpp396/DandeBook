@@ -201,4 +201,36 @@ for (const [w, mobile] of [[1280, false], [320, true]]) {
   });
 }
 
+await part('Texto', { width: 1280, height: 900 }, async (b, E) => {
+  // exportar
+  await E(`P.chords=parseChordBars('| Dm7 | G7 | Cmaj7 | A7 | Dm7 G7 | C | Fm6 | C |',SIGS['4/4'],48); P.notes=[];
+    P.marks=cleanMarks([{b:0,rs:true,segno:true},{b:2,v:1,re:3},{b:3,v:2,tocoda:true},{b:4,fine:true},{b:5,go:'ds',al:'coda'},{b:6,coda:true}]); renderAll()`);
+  const txt = await E('exportText(P)');
+  const rows = txt.split('\n').filter(l => l.startsWith('|'));
+  ok(rows[0] === '|: Segno Dm7 | G7 | 1. Cmaj7 x3 :| 2. A7 Al Coda |', 'primera fila con «|:», Segno, casillas y «x3 :|»', rows[0]);
+  ok(rows[1] === '| Dm7 G7 Fine | C D.S. al Coda | Coda Fm6 | C |', 'segunda fila con Fine, D.S. al Coda y Coda', rows[1]);
+  // ida y vuelta
+  ok(await E(`(()=>{ const q=importText(exportText(P)); return JSON.stringify(q.marks)===JSON.stringify(P.marks) && q.chords.map(chordText).join()===P.chords.map(chordText).join(); })()`), 'ida y vuelta por texto: mismas marcas y acordes', await E('JSON.stringify(importText(exportText(P)).marks)'));
+  ok(await E(`(()=>{ const q={...P,marks:[]}; return exportText(q).split('\\n').filter(l=>l.startsWith('|')).join(' / '); })()`) === '| Dm7 | G7 | Cmaj7 | A7 | / | Dm7 G7 | C | Fm6 | C |', 'sin marcas, el texto queda como antes');
+  // importar a mano, con otras grafías
+  const imp = async t => E(`(()=>{ try{ return JSON.stringify(importText(${JSON.stringify(t)}).marks); }catch(e){ return 'ERR '+e.message; } })()`);
+  ok(await imp('|: C | F x2 :|\n| G | d.c. al fine |') === '[{"b":0,"rs":true},{"b":1,"re":2},{"b":3,"go":"dc","al":"fine"}]', 'minúsculas y un compás solo con el salto', await imp('|: C | F x2 :|\n| G | d.c. al fine |'));
+  ok(await imp('| 𝄋 C | G7 al coda | D.S. | 𝄌 F |') === '[{"b":0,"segno":true},{"b":1,"tocoda":true},{"b":2,"go":"ds","al":""},{"b":3,"coda":true}]', 'glifos 𝄋 y 𝄌 y «al coda»', await imp('| 𝄋 C | G7 al coda | D.S. | 𝄌 F |'));
+  ok(await imp('| C x3 | G |') === 'ERR «x3» va con «:|», al final de la repetición', '«x3» sin «:|» da un error claro', await imp('| C x3 | G |'));
+  ok((await imp('| C x9 :|')).startsWith('ERR No entiendo el acorde «x9»'), '«x9» no vale', await imp('| C x9 :|'));
+  ok(await imp('| Segno C | Segno G |') === '[{"b":0,"segno":true}]', 'dos Segno: vale el primero');
+  // escribir acordes con marcas en medio de la página
+  await E(`P.chords=parseChordBars('| C | F |',SIGS['4/4'],48); P.marks=[]; ed.cs=1; renderAll()`);
+  await E(`document.querySelector('#wIn').value='|: Dm7 | G7 :|'; document.querySelector('#wForm').requestSubmit()`);
+  ok(await E('JSON.stringify(P.marks)') === '[{"b":2,"rs":true},{"b":3,"re":2}]', 'escribir «|: Dm7 | G7 :|» pone las marcas en sus compases', await E('JSON.stringify(P.marks)'));
+  await E('undo()'); ok(await E('P.marks.length') === 0 && await E('P.chords.length') === 2, 'deshacer quita acordes y marcas a la vez');
+  await E(`P.marks=cleanMarks([{b:0,fine:true}]); ed.cs=1; document.querySelector('#wIn').value='| G | C Fine |'; document.querySelector('#wForm').requestSubmit()`);
+  ok(await E('JSON.stringify(P.marks)') === '[{"b":3,"fine":true}]', 'el Fine escrito sustituye al que había', await E('JSON.stringify(P.marks)'));
+  await E(`document.querySelector('#wIn').value='Dm7 Fine'; document.querySelector('#wForm').requestSubmit()`);
+  ok((await E(`document.querySelector('#wMsg').textContent`)).includes('No entiendo el acorde «Fine»'), 'sin «|» no hay marcas: lo dice', await E(`document.querySelector('#wMsg').textContent`));
+  // texto hostil
+  ok((await imp('|: '.repeat(400) + 'C :|')).startsWith('[') || (await imp('|: '.repeat(400) + 'C :|')).startsWith('ERR'), 'muchas marcas seguidas no rompen nada');
+  ok(await E(`(()=>{ const q=importText('| C '.repeat(200)+'| D.C. |'); return q.marks.length===1 && q.marks[0].b===200 && formPath(q).length===402; })()`), 'un texto largo con un D.C. al final', await E(`(()=>{ const q=importText('| C '.repeat(200)+'| D.C. |'); return [JSON.stringify(q.marks),formPath(q).length]; })()`));
+});
+
 done('forma');

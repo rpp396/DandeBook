@@ -113,7 +113,29 @@ function parseTok(tok,sg){
   const c=parseChord(name); if(!c) throw new Error(`No entiendo el acorde «${name}»`);
   return {c,d};
 }
-function parseChordBars(text,sg,defDur,firstL=0,forceBars=false){
+// Marcas de forma escritas en un compás: «:» al principio («|:») o al final («:|»), «x3» (vueltas), «1.» «2.» (casillas),
+// Segno, Coda, «Al Coda», Fine, «D.C.», «D.S.», «D.C. al Fine», «D.S. al Coda». Devuelve los demás tokens y la marca.
+function barMarks(part){
+  let p=part.trim(); const m={}; let times=0;
+  if(p.startsWith(':')){ m.rs=true; p=p.slice(1); }
+  if(p.endsWith(':')){ m.re=2; p=p.slice(0,-1); }
+  p=p.replace(/(^|\s)(D\.[CS]\.)\s+al\s+(fine|coda)(?=\s|$)/gi,'$1$2_al_$3').replace(/(^|\s)al\s+coda(?=\s|$)/gi,'$1al_coda');
+  const toks=[];
+  for(const t of p.split(/\s+/).filter(Boolean)){
+    let x;
+    if(/^[1-4]\.$/.test(t)) m.v=+t[0];
+    else if(/^(segno|𝄋)$/i.test(t)) m.segno=true;
+    else if(/^(coda|𝄌)$/i.test(t)) m.coda=true;
+    else if(/^al_coda$/i.test(t)) m.tocoda=true;
+    else if(/^fine$/i.test(t)) m.fine=true;
+    else if((x=t.match(/^D\.([CS])\.(?:_al_(fine|coda))?$/i))){ m.go=x[1].toUpperCase()==='C'?'dc':'ds'; m.al=(x[2]||'').toLowerCase(); }
+    else if((x=t.match(/^[x×]([2-8])$/i))) times=+x[1];
+    else toks.push(t);
+  }
+  if(times){ if(!m.re) throw new Error(`«x${times}» va con «:|», al final de la repetición`); m.re=times; }
+  return {toks,m};
+}
+function parseChordBars(text,sg,defDur,firstL=0,forceBars=false,marks=null){
   const out=[]; const L=sg.L; const src=text.replace(/\n/g,' ');
   const pushTok=(it,d)=>{ if(it.c==='-'){ if(!out.length) throw new Error('«-» alarga el acorde anterior, y todavía no hay ninguno'); out[out.length-1].d+=d; } else out.push({...it.c,d}); };
   if(!src.includes('|')&&!forceBars){
@@ -124,7 +146,8 @@ function parseChordBars(text,sg,defDur,firstL=0,forceBars=false){
   let prev=null;
   parts.forEach((part,pi)=>{
     const BL=pi===0&&firstL?firstL:L;
-    let toks=part.split(/\s+/).filter(Boolean); if(!toks.length) toks=['-'];
+    const bm=barMarks(part); if(Object.keys(bm.m).length){ if(!marks) throw new Error(`Aquí no se pueden poner repeticiones ni saltos («${part.trim()}»)`); marks.push({b:pi,...bm.m}); }
+    let toks=bm.toks; if(!toks.length) toks=['-'];
     if(toks.length===1&&toks[0]==='%'){ if(!prev) throw new Error('«%» repite el compás anterior, y aquí no hay ninguno'); toks=prev.slice(); }
     const items=toks.map(t=>parseTok(t,sg));
     const fixed=items.reduce((a,i)=>a+(i.d||0),0), free=items.filter(i=>i.d==null).length;
@@ -153,11 +176,17 @@ function parseMelody(text){
 function exportText(p){
   const sg=SIGS[p.sig], L=sg.L; const lines=['Pautado',`Título: ${p.title}`,`Compás: ${p.sig} · Tempo: ${p.bpm} · Tono: ${p.key}`];
   const nb=Math.ceil(sumD(p.chords)/L);
-  if(nb){ const bars=chordSegs(p,nb); const toks=bars.map(segs=>{ const real=segs.filter(s=>!s.gap); const eq=!segs.some(s=>s.gap)&&real.every(s=>s.d===real[0].d);
-      return real.map(s=>(s.head?chordText(p.chords[s.ci]):'-')+(eq?'':':'+fmtNum(s.d/sg.beat).replace(',','.'))).join(' '); });
-    for(let i=0;i<toks.length;i+=4) lines.push('| '+toks.slice(i,i+4).join(' | ')+' |'); }
+  if(nb){ const bars=chordSegs(p,nb); const toks=bars.map((segs,b)=>{ const real=segs.filter(s=>!s.gap); const eq=!segs.some(s=>s.gap)&&real.every(s=>s.d===real[0].d);
+      return barText(markAt(p,b),real.map(s=>(s.head?chordText(p.chords[s.ci]):'-')+(eq?'':':'+fmtNum(s.d/sg.beat).replace(',','.'))).join(' ')); });
+    for(let i=0;i<toks.length;i+=4) lines.push((toks.slice(i,i+4).join(' ')+' |').replace(/ : \|/g,' :|')); }
   if(p.notes.length){ let t=0; const parts=[]; p.notes.forEach(n=>{ if(t>0&&t%L===0) parts.push('|'); parts.push(noteTok(n)); t+=n.d; }); lines.push('Melodía: '+parts.join(' ')); }
   return lines.join('\n');
+}
+// Un compás en texto, con sus marcas: «|: 1. Segno Dm7 G7 x3 Fine :»
+function barText(m,chords){
+  if(!m) return '| '+chords;
+  const pre=[m.v?`${m.v}.`:'',m.segno?'Segno':'',m.coda?'Coda':''].filter(Boolean), post=[m.re>2?`x${m.re}`:'',m.tocoda?'Al Coda':'',m.fine?'Fine':'',m.go?JUMP_TXT[m.go]+AL_TXT[m.al||'']:''].filter(Boolean);
+  return (m.rs?'|: ':'| ')+[...pre,chords,...post].join(' ')+(m.re?' :':'');
 }
 function noteTok(n){
   const base=DOTTED.includes(n.d)?n.d/1.5:n.d; const dl=DLET[base]; const dot=DOTTED.includes(n.d)?'.':'';
@@ -184,7 +213,7 @@ function importText(txt){
   const p=newPage(title); p.sig=sig; p.bpm=bpm; p.key=key;
   const rows=ch.map(l=>l.replace(/^\|\s*/,'').replace(/\s*\|$/,'').trim()).filter(Boolean);
   const ctext=rows.length&&!ch.some(l=>l.includes('|'))?rows.join(' ').split(/\s+/).join(' | '):rows.join(' | ');
-  if(ctext.trim()) p.chords=parseChordBars(ctext,SIGS[sig],SIGS[sig].L,0,true);
+  const mk=[]; if(ctext.trim()) p.chords=parseChordBars(ctext,SIGS[sig],SIGS[sig].L,0,true,mk); p.marks=cleanMarks(mk);
   if(mel.length) p.notes=parseMelody(mel.join(' '));
   if(!p.chords.length&&!p.notes.length) throw new Error('El texto no tiene acordes ni melodía');
   if(p.chords.length>512||p.notes.length>1024) throw new Error('El texto es demasiado largo para una página');
