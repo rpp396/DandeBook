@@ -212,6 +212,10 @@ await part('Texto', { width: 1280, height: 900 }, async (b, E) => {
   // ida y vuelta
   ok(await E(`(()=>{ const q=importText(exportText(P)); return JSON.stringify(q.marks)===JSON.stringify(P.marks) && q.chords.map(chordText).join()===P.chords.map(chordText).join(); })()`), 'ida y vuelta por texto: mismas marcas y acordes', await E('JSON.stringify(importText(exportText(P)).marks)'));
   ok(await E(`(()=>{ const q={...P,marks:[]}; return exportText(q).split('\\n').filter(l=>l.startsWith('|')).join(' / '); })()`) === '| Dm7 | G7 | Cmaj7 | A7 | / | Dm7 G7 | C | Fm6 | C |', 'sin marcas, el texto queda como antes');
+  // compases sin acordes al final, con marcas: se escriben y no alargan el último acorde
+  ok(await E(`(()=>{ const q={...newPage('x'),chords:parseChordBars('| C | G |',SIGS['4/4'],48),notes:parseMelody('C4w | D4w | E4w | F4w | G4w'),marks:cleanMarks([{b:1,re:2},{b:4,fine:true}])};
+    const t=exportText(q), r=importText(t); return t.includes('| C | G :| | |\\n| Fine |') && JSON.stringify(r.marks)===JSON.stringify(q.marks) && r.chords.map(chordText).join()==='C,G' && sumD(r.chords)===96; })()`), 'marcas en compases de solo melodía: ida y vuelta sin alargar acordes', await E(`exportText({...newPage('x'),chords:parseChordBars('| C | G |',SIGS['4/4'],48),notes:[],marks:cleanMarks([{b:1,re:2},{b:4,fine:true}])})`));
+  ok(await E(`sumD(parseChordBars('| C | |',SIGS['4/4'],48,0,true))`) === 96, 'sin marcas, un compás vacío al final sigue alargando el acorde');
   // importar a mano, con otras grafías
   const imp = async t => E(`(()=>{ try{ return JSON.stringify(importText(${JSON.stringify(t)}).marks); }catch(e){ return 'ERR '+e.message; } })()`);
   ok(await imp('|: C | F x2 :|\n| G | d.c. al fine |') === '[{"b":0,"rs":true},{"b":1,"re":2},{"b":3,"go":"dc","al":"fine"}]', 'minúsculas y un compás solo con el salto', await imp('|: C | F x2 :|\n| G | d.c. al fine |'));

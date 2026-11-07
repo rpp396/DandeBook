@@ -8,14 +8,17 @@ Todo se guarda **solo en el navegador de quien la usa**, en `localStorage`, con 
 
 Al abrir la app como Artifact de claude.ai, las páginas se guardan además en la cuenta de Claude de quien la usa, en su parte privada del almacenamiento que ofrece claude.ai (`window.claude`), no en ningún servicio de este proyecto.
 
+Enviar una página con un enlace (`#p=…`) mete la página en la parte del enlace posterior a «#», que el navegador no envía al servidor. Quien abre el enlace la guarda en su propio navegador; no se comparte nada más.
+
 Las tipografías van incluidas en el repositorio (`fonts/`, licencia SIL OFL): al abrir la página no se contacta con ningún tercero, y el `Referer` no se envía (`no-referrer`).
 
 ## Medidas de la app
 
-- **Los datos guardados no se consideran de fiar.** Al leer `localStorage`, el almacenamiento de claude.ai o un texto importado se valida todo: tipos, rangos, claves de listas cerradas, compases y tonos existentes, y un máximo de páginas, acordes y notas. Lo corrupto se descarta o vuelve al valor por defecto, y la app arranca igualmente.
+- **Los datos guardados no se consideran de fiar.** Al leer `localStorage`, el almacenamiento de claude.ai, un texto importado o un enlace `#p=` se valida todo: tipos, rangos, claves de listas cerradas, compases y tonos existentes, y un máximo de páginas, acordes y notas. Lo corrupto se descarta o vuelve al valor por defecto, y la app arranca igualmente.
 - **Todo dato que se pinta se escapa** (`esc()` o `textContent`).
 - **Content-Security-Policy** (por `<meta>`): solo se ejecutan los scripts de la propia página (`script-src 'self'`), sin código en línea ni `eval`, sin estilos en línea, sin conexiones a otros orígenes, sin `<base>`, formularios ni objetos.
-- Pruebas automáticas (`tests/seguridad.test.mjs`) con datos maliciosos y corruptos e importaciones hostiles; todas las suites comprueban que no hay violaciones de la política ni peticiones externas.
+- **Enlaces:** el código del enlace tiene un tope de 60 000 caracteres, se decodifica como UTF-8 estricto y se lee entero con el mismo importador que el texto (o no se guarda nada); el cuaderno no pasa de 300 páginas.
+- Pruebas automáticas (`tests/seguridad.test.mjs`, `tests/enlace.test.mjs`) con datos maliciosos y corruptos, importaciones y enlaces hostiles; todas las suites comprueban que no hay violaciones de la política ni peticiones externas.
 
 ## Limitaciones
 

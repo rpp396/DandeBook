@@ -15,6 +15,7 @@
 - **Transportar** a cualquiera de los 13 tonos mayores (de C a G♭ y F♯) con la ortografía correcta (B♭, no A♯), conservando las inversiones.
 - **Estilos de cifrado:** claro (Cmaj7, Cm7♭5), jazz (C△7, Cø7) o latino (C7M, Cm7(♭5)), y nombres C D E o Do Re Mi.
 - **Cuaderno:** hasta 300 páginas, guardado automático, deshacer y rehacer, y copia de cada página como texto para guardarla o pasarla.
+- **Enviar una página por enlace:** *Enviar enlace* da una URL con la página dentro; quien la abre la tiene en su cuaderno.
 - **Letra de cuaderno:** el cifrado y las notas usan Petaluma, la tipografía manuscrita de Steinberg.
 - **Accesible y privada:** se puede usar entera con teclado y lector de pantalla, y no hace ninguna petición a otros sitios: todo, fuentes incluidas, va en el repositorio, y las páginas se quedan en tu navegador (ver [`SECURITY.md`](SECURITY.md)).
 
@@ -83,6 +84,7 @@ La app escribe sola las barras de las corcheas y semicorcheas por pulso, las not
 
 - **Reproducir** suena con lo elegido en *Acordes*, *Melodía*, *Metrónomo* y *Bucle*, siguiendo las repeticiones y los saltos; la grilla y el pentagrama marcan lo que suena. En bucle, los cambios se oyen en la vuelta siguiente.
 - **Transportar** cambia el tono de la página y mueve acordes, bajos y melodía por el camino más corto. En el tritono (por ejemplo, de C a G♭ o F♯), la melodía sube o baja según cuál la deje más cerca del centro del pentagrama, así que ir y volver no la cambia de octava.
+- **Enviar enlace** (junto a *Transportar*) copia un enlace con la página entera dentro, tras `#p=`; en el móvil abre el menú de compartir del sistema. Quien lo abre recibe una copia en su cuaderno (si ya la tenía, se abre la suya) y el enlace se quita de la barra de direcciones. Lo que va tras `#` no se envía al servidor, así que la página no pasa por ningún sitio. Es el mismo texto de *Copiar la página como texto*, en base64url (letras, números, `-` y `_`) para que ningún servicio de mensajería corte el enlace.
 - **Páginas:** *Nueva página*, *Duplicar* y *Borrar* (pide confirmación). Cada cambio se guarda solo, y se puede deshacer hasta 100 pasos por página.
 - **Texto:** *Copiar la página como texto* da algo así, que se puede pegar en *Texto para importar* para crear una página nueva:
 
@@ -138,7 +140,7 @@ Además: <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace, <kbd>Ctrl</kbd>+<kbd>Mayús</kbd>
 
 ## Pruebas
 
-Hay una batería de pruebas de navegador en `tests/` (unas 380 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, repeticiones y saltos, transporte, texto, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
+Hay una batería de pruebas de navegador en `tests/` (unas 420 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, repeticiones y saltos, transporte, texto, enlaces, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
 
 ```
 npm test                    # equivale a: node tests/run.mjs

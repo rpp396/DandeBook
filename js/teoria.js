@@ -144,9 +144,12 @@ function parseChordBars(text,sg,defDur,firstL=0,forceBars=false,marks=null){
   }
   const parts=src.split('|').map(s=>s.trim()); if(parts[0]==='') parts.shift(); if(parts.length&&parts[parts.length-1]==='') parts.pop();
   let prev=null;
+  // compases del final sin acordes que llevan marcas (un Fine o un D.C. en compases de solo melodía): no alargan el acorde anterior
+  const bms=parts.map(barMarks), lastCh=bms.reduce((a,x,i)=>x.toks.length?i:a,-1), tail=bms.some((x,i)=>i>lastCh&&Object.keys(x.m).length);
   parts.forEach((part,pi)=>{
     const BL=pi===0&&firstL?firstL:L;
-    const bm=barMarks(part); if(Object.keys(bm.m).length){ if(!marks) throw new Error(`Aquí no se pueden poner repeticiones ni saltos («${part.trim()}»)`); marks.push({b:pi,...bm.m}); }
+    const bm=bms[pi]; if(Object.keys(bm.m).length){ if(!marks) throw new Error(`Aquí no se pueden poner repeticiones ni saltos («${part.trim()}»)`); marks.push({b:pi,...bm.m}); }
+    if(tail&&pi>lastCh) return;
     let toks=bm.toks; if(!toks.length) toks=['-'];
     if(toks.length===1&&toks[0]==='%'){ if(!prev) throw new Error('«%» repite el compás anterior, y aquí no hay ninguno'); toks=prev.slice(); }
     const items=toks.map(t=>parseTok(t,sg));
@@ -175,7 +178,7 @@ function parseMelody(text){
 }
 function exportText(p){
   const sg=SIGS[p.sig], L=sg.L; const lines=['Pautado',`Título: ${p.title}`,`Compás: ${p.sig} · Tempo: ${p.bpm} · Tono: ${p.key}`];
-  const nb=Math.ceil(sumD(p.chords)/L);
+  const pm=p.marks||[], nb=Math.max(Math.ceil(sumD(p.chords)/L),pm.length?pm[pm.length-1].b+1:0); // también los compases sin acordes que llevan marcas
   if(nb){ const bars=chordSegs(p,nb); const toks=bars.map((segs,b)=>{ const real=segs.filter(s=>!s.gap); const eq=!segs.some(s=>s.gap)&&real.every(s=>s.d===real[0].d);
       return barText(markAt(p,b),real.map(s=>(s.head?chordText(p.chords[s.ci]):'-')+(eq?'':':'+fmtNum(s.d/sg.beat).replace(',','.'))).join(' ')); });
     for(let i=0;i<toks.length;i+=4) lines.push((toks.slice(i,i+4).join(' ')+' |').replace(/ : \|/g,' :|')); }
@@ -184,9 +187,10 @@ function exportText(p){
 }
 // Un compás en texto, con sus marcas: «|: 1. Segno Dm7 G7 x3 Fine :»
 function barText(m,chords){
-  if(!m) return '| '+chords;
+  if(!m) return chords?'| '+chords:'|';
   const pre=[m.v?`${m.v}.`:'',m.segno?'Segno':'',m.coda?'Coda':''].filter(Boolean), post=[m.re>2?`x${m.re}`:'',m.tocoda?'Al Coda':'',m.fine?'Fine':'',m.go?JUMP_TXT[m.go]+AL_TXT[m.al||'']:''].filter(Boolean);
-  return (m.rs?'|: ':'| ')+[...pre,chords,...post].join(' ')+(m.re?' :':'');
+  const body=[...pre,chords,...post].filter(Boolean).join(' ');
+  return (m.rs?'|:':'|')+(body?' '+body:'')+(m.re?' :':'');
 }
 function noteTok(n){
   const base=DOTTED.includes(n.d)?n.d/1.5:n.d; const dl=DLET[base]; const dot=DOTTED.includes(n.d)?'.':'';
