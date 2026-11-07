@@ -209,6 +209,7 @@ function renderPages(){
 function renderHead(){
   const t=$('#pTitle'); if(document.activeElement!==t) t.value=P.title;
   $('#pSig').value=P.sig; $('#pKey').value=P.key; $('#bpm').value=P.bpm; $('#exChip').hidden=!P.ex;
+  const ln=$('#linkNote'), showLn=!!linkNote&&linkNote.id===P.id; ln.hidden=!showLn; if(showLn){ ln.textContent=linkNote.t; ln.classList.toggle('err',linkNote.err); }
   const sg=SIGS[P.sig]; const base=sg.beat===18?12:sg.beat; $('#tGlyph').innerHTML=figIcon(base,sg.beat===18);
   $('#tGlyph').title=(sg.beat===18?'Negra con puntillo':sg.beat===24?'Blanca':'Negra')+' por minuto';
   $('#bpm').setAttribute('aria-label',`Tempo: ${sg.beat===18?'negras con puntillo':sg.beat===24?'blancas':'negras'} por minuto`);
