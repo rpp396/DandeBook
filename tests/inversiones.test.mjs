@@ -55,7 +55,7 @@ await part('Inversiones', { width: 1280, height: 900 }, async (b, E) => {
   // texto
   ok(await E(`(()=>{ const q=importText(exportText(P)); return q.chords.map(chordText).join(' '); })()`) === 'Eb/G Bb7/F Cm7/Bb', 'ida y vuelta por texto');
   // sonido: el bajo que suena es el de la inversión
-  ok(await E(`(()=>{ ensureAudio(); A.bus=A.ctx.createGain(); const fs=[]; const orig=voice; window.voice=(d,f,...r)=>{ fs.push(Math.round(f)); }; try{ playChord(parseChord('C/E'),A.ctx.currentTime+1,0.5,1); } finally { window.voice=orig; } return fs[0]; })()`) === Math.round(440 * Math.pow(2, (40 - 69) / 12)), 'suena E2 en el bajo');
+  ok(await E(`(()=>{ ensureAudio(); A.bus=A.ctx.createGain(); const ms=[]; const orig=tone; window.tone=(inst,m,t,d,v,role)=>{ ms.push(role+m); }; try{ playChord(parseChord('C/E'),A.ctx.currentTime+1,0.5,1); } finally { window.tone=orig; } return ms[0]; })()`) === 'bass40', 'suena E2 en el bajo');
 });
 // móvil: la paleta con la fila nueva
 await part('Inversiones en el móvil', { width: 390, height: 844, mobile: true, scale: 2 }, async (m) => {

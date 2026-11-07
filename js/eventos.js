@@ -168,6 +168,9 @@ function bind(){
     catch(err){ msg.className='tmsg err'; msg.textContent=err.message; } });
   $('#sStyle').addEventListener('change',e=>{ store.set.style=oneOf(e.target.value,['pop','jazz','lat'],'pop'); saveSoon(); relabelPalette(); renderAll(); });
   $('#sNames').addEventListener('change',e=>{ store.set.names=oneOf(e.target.value,['us','lat'],'us'); saveSoon(); relabelPalette(); fillKeySelects(); renderAll(); });
+  [['#sSnd','snd','chord'],['#sMsnd','msnd','mel']].forEach(([id,k,role])=>$(id).addEventListener('change',e=>{
+    store.set[k]=oneOf(e.target.value,INST_KEYS,'piano'); saveSoon(); previewInst(store.set[k],role);
+    say(`${role==='mel'?'Melodía':'Acordes'}: ${INSTS.find(x=>x[0]===store.set[k])[1]}${A.playing?'. Se oye en la vuelta siguiente':''}`); }));
   $('#sSim').addEventListener('change',e=>{ store.set.simile=e.target.checked; saveSoon(); renderAll(); });
   let lastW=0; new ResizeObserver(()=>{ const w=$('#sheetBody').clientWidth; if(Math.abs(w-lastW)>2){ lastW=w; if(store.set.view==='staff') renderStaff(); else renderGrid(); } }).observe($('#sheetBody'));
   new ResizeObserver(dockSize).observe($('#palette')); dockMQ.addEventListener('change',dockSize);

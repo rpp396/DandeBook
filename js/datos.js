@@ -69,7 +69,7 @@ const withDot=(base,on)=>on&&base!==3&&BASES.includes(base)?base*1.5:base; // la
 const DLET={48:'w',24:'h',12:'q',6:'e',3:'s'};
 /* ---------- Estado y guardado ---------- */
 const LSKEY='pautado-v1', PAGES_MAX=300;
-const DEF_SET={style:'pop',names:'us',simile:true,view:'grid',chords:true,melody:true,metro:false,loop:false,min:false};
+const DEF_SET={style:'pop',names:'us',simile:true,view:'grid',chords:true,melody:true,metro:false,loop:false,min:false,snd:'piano',msnd:'piano'};
 let store={pages:[],cur:'',gone:[],set:{...DEF_SET}};
 let P=null;
 // cdot / ndot: el puntillo de la paleta de acordes y de notas es un interruptor que se mantiene; empieza activado en compás compuesto
@@ -125,6 +125,7 @@ function cleanPage(p){
 }
 function cleanSet(s){
   const o={...DEF_SET}; if(!isObj(s)) return o;
+  o.snd=oneOf(s.snd,INST_KEYS,'piano'); o.msnd=oneOf(s.msnd,INST_KEYS,'piano'); // INST_KEYS es de instrumentos.js: cleanSet solo se llama al arrancar
   o.style=oneOf(s.style,['pop','jazz','lat'],'pop'); o.names=oneOf(s.names,['us','lat'],'us'); o.view=oneOf(s.view,['grid','staff'],'grid');
   ['simile','chords','melody','metro','loop','min'].forEach(k=>{ if(typeof s[k]==='boolean') o[k]=s[k]; });
   return o;
