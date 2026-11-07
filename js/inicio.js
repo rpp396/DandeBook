@@ -9,6 +9,8 @@ P=store.pages.find(p=>p.id===store.cur)||store.pages[0];
 ed.cs=P.chords.length-1; ed.ns=P.notes.length-1; meterDefaults();
 $('#pSig').innerHTML=Object.keys(SIGS).map(s=>`<option value="${s}">${s}</option>`).join('');
 fillKeySelects(); buildPalette(); buildForms(); relabelPalette(); syncMB();
+['#sSnd','#sMsnd'].forEach(id=>{ $(id).innerHTML=INSTS.map(([k,n])=>`<option value="${k}">${esc(n)}</option>`).join(''); });
+$('#sSnd').value=store.set.snd; $('#sMsnd').value=store.set.msnd;
 $('#sStyle').value=store.set.style; $('#sNames').value=store.set.names; $('#sSim').checked=store.set.simile;
 bind(); renderAll(); dockSize();
 if(fromLink) say(linkNote.t);

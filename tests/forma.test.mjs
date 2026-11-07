@@ -140,11 +140,11 @@ await part('Forma en el móvil', { width: 320, height: 700, mobile: true, scale:
 await part('Sonido con la forma', { width: 1280, height: 900 }, async (b, E) => {
   // espía: qué acordes, notas y clics se programan y cuándo (en ticks desde el principio de la pasada)
   const spy = `(()=>{ ensureAudio(); A.bus=A.ctx.createGain(); A.spt=60/(P.bpm*SIGS[P.sig].beat); const t0=A.ctx.currentTime+5, log={c:[],n:[],k:0};
-    const tk=t=>Math.round((t-t0)/A.spt), oc=playChord, ov=voice, ok=click;
+    const tk=t=>Math.round((t-t0)/A.spt), oc=playChord, ov=tone, ok=click;
     window.playChord=(c,t,d,v)=>log.c.push(chordText(c)+'@'+tk(t)+(v<1?'~':''));
-    window.voice=(dst,f,t,d)=>log.n.push(tk(t)+'+'+Math.round((d+0.03)/A.spt));
+    window.tone=(inst,m,t,d)=>log.n.push(tk(t)+'+'+Math.round((d+0.03)/A.spt));
     window.click=()=>{ log.k++; };
-    try{ schedulePass(t0,passPath()); } finally { window.playChord=oc; window.voice=ov; window.click=ok; }
+    try{ schedulePass(t0,passPath()); } finally { window.playChord=oc; window.tone=ov; window.click=ok; }
     return JSON.stringify(log); })()`;
   await E(`P.chords=parseChordBars('| C | F | G |',SIGS['4/4'],48); P.notes=[]; P.marks=cleanMarks([{b:1,re:2}]); store.set.melody=true; store.set.chords=true; store.set.metro=true; renderAll()`);
   let log = JSON.parse(await E(spy));

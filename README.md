@@ -11,7 +11,7 @@
 - **Cada acorde con su fundamental, calidad, inversión y duración:** 12 calidades a mano y 15 más (de la tríada mayor al 7alt), inversiones (1.ª, 2.ª, 3.ª) o cualquier otro bajo, y duración en compases, figuras o con puntillo.
 - **Escritura rápida:** `Dm7 G7 | Cmaj7 | % |` y los acordes se reparten solos en los compases. Entiende muchas formas de escribir lo mismo: `Cmaj7`, `C7M`, `CΔ`, `Cm7b5`, `Cø`, `Sol7`, `Sib/Re`…
 - **Pentagrama:** la melodía en clave de sol con el cifrado encima, al estilo de un *Real Book*: alturas, figuras de redonda a semicorchea, puntillos, silencios, ligaduras y alteraciones, con barras de corcheas, ligaduras entre compases y armadura.
-- **Escucharlo:** acordes, melodía, metrónomo y bucle, con el compás que suena resaltado.
+- **Escucharlo:** acordes, melodía, metrónomo y bucle, con el compás que suena resaltado, y seis sonidos a elegir para los acordes y la melodía (piano, piano eléctrico, guitarra, órgano, cuerdas y 8 bits), sintetizados en el propio navegador.
 - **Transportar** a cualquiera de los 13 tonos mayores (de C a G♭ y F♯) con la ortografía correcta (B♭, no A♯), conservando las inversiones.
 - **Estilos de cifrado:** claro (Cmaj7, Cm7♭5), jazz (C△7, Cø7) o latino (C7M, Cm7(♭5)), y nombres C D E o Do Re Mi.
 - **Cuaderno:** hasta 300 páginas, guardado automático, deshacer y rehacer, y copia de cada página como texto para guardarla o pasarla.
@@ -82,6 +82,7 @@ La app escribe sola las barras de las corcheas y semicorcheas por pulso, las not
 
 ### Escuchar, transportar y el cuaderno
 
+- **Sonidos:** en *Ajustes*, *Sonido de los acordes* y *Sonido de la melodía* eligen entre piano (el de serie), piano eléctrico, guitarra, órgano, cuerdas y 8 bits, y al elegir uno se oye. Se sintetizan en el navegador, sin descargar muestras: el piano suma parciales que se apagan a distinto ritmo, el piano eléctrico es FM, la guitarra una cuerda pulsada (Karplus-Strong), el órgano y las cuerdas, osciladores; todo con una reverberación suave.
 - **Reproducir** suena con lo elegido en *Acordes*, *Melodía*, *Metrónomo* y *Bucle*, siguiendo las repeticiones y los saltos; la grilla y el pentagrama marcan lo que suena. En bucle, los cambios se oyen en la vuelta siguiente.
 - **Transportar** cambia el tono de la página y mueve acordes, bajos y melodía por el camino más corto. En el tritono (por ejemplo, de C a G♭ o F♯), la melodía sube o baja según cuál la deje más cerca del centro del pentagrama, así que ir y volver no la cambia de octava.
 - **Enviar enlace** (junto a *Transportar*) copia un enlace con la página entera dentro, tras `#p=`; en el móvil abre el menú de compartir del sistema. Quien lo abre recibe una copia en su cuaderno (si ya la tenía, se abre la suya) y el enlace se quita de la barra de direcciones. Lo que va tras `#` no se envía al servidor, así que la página no pasa por ningún sitio. Es el mismo texto de *Copiar la página como texto*, en base64url (letras, números, `-` y `_`) para que ningún servicio de mensajería corte el enlace.
@@ -140,7 +141,7 @@ Además: <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace, <kbd>Ctrl</kbd>+<kbd>Mayús</kbd>
 
 ## Pruebas
 
-Hay una batería de pruebas de navegador en `tests/` (unas 420 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, repeticiones y saltos, transporte, texto, enlaces, sonido, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
+Hay una batería de pruebas de navegador en `tests/` (unas 460 comprobaciones: edición en la grilla y el pentagrama, lector de acordes, inversiones, tonos y puntillo en compás compuesto, repeticiones y saltos, transporte, texto, enlaces, sonido e instrumentos, móvil a 390 y 320 px, guardado en la cuenta y datos hostiles). **No necesitan instalar nada:** usan Node 22 y el Chrome o Chromium del equipo, controlado directamente por el protocolo DevTools.
 
 ```
 npm test                    # equivale a: node tests/run.mjs

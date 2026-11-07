@@ -199,6 +199,12 @@
             </select>
           </label>
           <label class="ck"><input type="checkbox" id="sSim"> Mostrar % en los compases que repiten el anterior</label>
+          <label class="f">Sonido de los acordes
+            <select id="sSnd"></select>
+          </label>
+          <label class="f">Sonido de la melodía
+            <select id="sMsnd"></select>
+          </label>
         </div>
       </details>
 
@@ -212,6 +218,7 @@
             <li><b>Otro bajo:</b> pulsa <i>/ Bajo</i> y luego la nota del bajo, aunque no sea del acorde (C/D).</li>
             <li><b>Escribir:</b> <code>Dm7 G7 | Cmaj7 | % |</code>: cada <code>|</code> cierra un compás, los acordes de un compás se lo reparten y <code>%</code> repite el anterior. <code>Dm7:3 G7:1</code> da los tiempos.</li>
             <li><b>Repeticiones y saltos:</b> marca un acorde (o toca un compás vacío) y abre <i>Repeticiones y saltos</i> en la paleta: barras de repetición con sus vueltas, casillas 1.ª, 2.ª y 3.ª, Segno, Coda, Al Coda, Fine, D.C. y D.S. (al Fine o al Coda). Al reproducir se sigue la forma; después de un D.C. o D.S. no se repite y solo se toca la última casilla. Por escrito: <code>|: Dm7 | 1. G7 x3 :| 2. C Fine |</code>.</li>
+            <li><b>Sonidos:</b> en <i>Ajustes</i> eliges el sonido de los acordes y el de la melodía: piano, piano eléctrico, guitarra, órgano, cuerdas u 8 bits.</li>
             <li><b>Enviar una página:</b> <i>Enviar enlace</i> copia un enlace (en el móvil abre el menú de compartir). Quien lo abra tendrá una copia de la página en su cuaderno; la página va dentro del enlace y no pasa por ningún servidor.</li>
             <li><b>Pentagrama:</b> toca para poner una nota; la siguiente sale con la misma figura. Arrastra una nota con el ratón para cambiar su altura.</li>
             <li><b>Teclado:</b> con la grilla o el pentagrama enfocados, A–G escribe, ← → elige, ↑ ↓ sube o baja, I cambia la inversión, 1 2 4 8 6 cambia la figura, <kbd>.</kbd> activa o quita el puntillo, Retroceso borra y P reproduce.</li>
@@ -230,6 +237,7 @@
 <script src="js/grilla.js"></script>
 <script src="js/pentagrama.js"></script>
 <script src="js/edicion.js"></script>
+<script src="js/instrumentos.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/eventos.js"></script>
 <script src="js/inicio.js"></script>
