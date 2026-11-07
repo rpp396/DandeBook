@@ -38,6 +38,47 @@ function onKey(e){
     if(k==='p'||k==='P'){ e.preventDefault(); play(); return; }
   }
 }
+/* ---------- Enlace a una página ---------- */
+// La página va tras «#p=» (esa parte del enlace no se envía al servidor) como su texto (exportText) en base64url,
+// que solo usa letras, números, «-» y «_»: ningún navegador ni servicio de mensajería lo corta al reconocer el enlace.
+const LINK_MAX=60000; // caracteres del código; una página llena (512 acordes y 1024 notas) cabe de sobra
+function b64url(s){ let b=''; new TextEncoder().encode(s).forEach(c=>{ b+=String.fromCharCode(c); }); return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function unb64url(c){ const b=atob(c.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((c.length+3)%4)); return new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(b,ch=>ch.charCodeAt(0))); }
+function pageLink(p){ return location.href.split('#')[0]+'#p='+b64url(exportText(p)); }
+// El enlace es un dato de fuera: se lee entero con importText, que valida todo (y cleanMarks), o no se guarda nada
+function pageFromCode(code){
+  if(!code) throw new Error('El enlace está vacío.');
+  if(code.length>LINK_MAX) throw new Error('El enlace es demasiado largo.');
+  let txt; try{ txt=unb64url(code); }catch(e){ throw new Error('El enlace está incompleto o dañado.'); }
+  if(!/^Pautado\r?\n/.test(txt)) throw new Error('El enlace no es de una página de Pautado.');
+  return importText(txt);
+}
+// Aviso bajo el título: {id, t, err}; se ve mientras esté abierta la página id
+let linkNote=null;
+function showNote(t,err){ linkNote={id:P?P.id:store.cur,t,err:!!err}; renderHead(); say(t); }
+// Al abrir un enlace #p= la página se guarda en el cuaderno (si no estaba ya) y se abre. Devuelve true si había enlace.
+function pageFromHash(){
+  const m=/^#p=([A-Za-z0-9_-]*)$/.exec(location.hash); if(!m) return false;
+  try{ history.replaceState(null,'',location.href.split('#')[0]); }catch(e){}
+  let p;
+  try{ p=pageFromCode(m[1]); }catch(e){ linkNote={id:store.cur,t:'El enlace de la página no es válido: '+e.message,err:true}; return true; }
+  const txt=exportText(p), dup=store.pages.find(x=>exportText(x)===txt);
+  if(dup){ store.cur=dup.id; linkNote={id:dup.id,t:`Ya tenías «${dup.title}» en el cuaderno.`}; return true; }
+  if(store.pages.length>=PAGES_MAX){ linkNote={id:store.cur,t:`No se pudo guardar la página del enlace: el cuaderno está lleno (${PAGES_MAX} páginas). Borra alguna y vuelve a abrir el enlace.`,err:true}; return true; }
+  store.pages.push(p); store.cur=p.id; cloudQueue(p.id); saveSoon();
+  linkNote={id:p.id,t:`Página «${p.title}» recibida por enlace y guardada en el cuaderno.`};
+  return true;
+}
+// Enviar: en el móvil, el menú de compartir del sistema; si no hay, o falla, se copia el enlace
+async function sendLink(){
+  const url=pageLink(P), n=url.length;
+  if(coarseMQ.matches&&navigator.share){
+    try{ await navigator.share({title:P.title,url}); showNote('Enlace enviado.'); return; }
+    catch(e){ if(e&&e.name==='AbortError') return; }
+  }
+  try{ await navigator.clipboard.writeText(url); showNote(`Enlace copiado (${n} caracteres). Quien lo abra tendrá una copia de esta página en su cuaderno.`); }
+  catch(e){ const ta=$('#txtIn'); $('#txtBox').open=true; ta.value=url; ta.focus(); ta.select(); showNote('No se pudo copiar solo: el enlace está en «Texto», seleccionado, para copiarlo.',true); }
+}
 /* ---------- Conexión de controles ---------- */
 function bind(){
   $('#palette').addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse'&&e.target.closest('button')) e.preventDefault(); }); // la paleta no roba el foco de la hoja
@@ -118,6 +159,8 @@ function bind(){
     if(DB.ready){ DB.pend.add(id); cloudFlush(); }
     if(!store.pages.length) store.pages.push(newPage('Página 1')); store.cur=store.pages.slice().sort((a,b)=>b.updated-a.updated)[0].id;
     $('#delAsk').hidden=true; saveSoon(); afterSwitch(); say('Página borrada'); $('#pageSel').focus(); });
+  $('#bLink').addEventListener('click',sendLink);
+  addEventListener('hashchange',()=>{ if(!pageFromHash()) return; stop(); afterSwitch(); renderPages(); say(linkNote.t); });
   $('#bCopy').addEventListener('click',()=>{ const txt=exportText(P), msg=$('#copyMsg');
     const fallback=()=>{ const ta=$('#txtIn'); ta.value=txt; ta.focus(); ta.select(); msg.textContent='No se pudo copiar solo: el texto está abajo, seleccionado, para copiarlo.'; };
     try{ navigator.clipboard.writeText(txt).then(()=>{ msg.textContent='Copiado. Pégalo donde quieras; para recuperarlo, pégalo abajo y crea una página.'; },fallback); }catch(e){ fallback(); } });

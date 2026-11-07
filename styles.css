@@ -110,6 +110,8 @@ input.ptitle:hover,input.ptitle:focus{border-color:var(--ui)}
 .meta label{display:inline-flex;align-items:center;gap:6px}
 .meta select{color:var(--ink);min-height:32px;padding:3px 8px}
 .exchip{font-size:13px;color:var(--warn);border:1px solid currentColor;border-radius:999px;padding:1px 9px}
+.linknote{margin:0;font-size:14px;color:var(--play);overflow-wrap:anywhere}
+.linknote.err{color:var(--bad)}
 .trrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 .trrow label{display:inline-flex;align-items:center;gap:6px}
 
@@ -274,7 +276,7 @@ svg.sys{display:block;touch-action:pan-y;overflow:visible;user-select:none;-webk
 
 @media (any-pointer: coarse){
   .k{min-height:44px}
-  .btn{min-height:44px}
+  .btn,.btn.sm{min-height:44px}
   .chip{min-height:40px}
   .step{width:40px;height:40px}
   .views button{min-height:44px}
