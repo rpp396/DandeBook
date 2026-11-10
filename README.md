@@ -66,7 +66,7 @@ Debajo de la grilla hay un campo para escribir varios acordes de una vez:
 | `\| C \| % \|` | `%` repite el compás anterior |
 | `\| C - \| G7 \|` | `-` alarga el acorde anterior |
 | `N.C.` | sin acorde |
-| `\|: Dm7 \| G7 x3 :\|` | repetición de tres vueltas (sin `x3`, dos) |
+| `\|\|: Dm7 \| G7 x3 :\|\|` | repetición de tres vueltas (sin `x3`, dos); también vale `\|:` … `:\|` |
 | `\| 1. C \| 2. F \|` | casillas |
 | `\| Segno C \| G7 Al Coda \| F D.S. al Coda \| Coda C \|` | Segno, Al Coda, D.S. al Coda y Coda (también `𝄋`, `𝄌`, `Fine`, `D.C.`, `D.C. al Fine`) |
 
@@ -98,7 +98,7 @@ La app escribe sola las barras de las corcheas y semicorcheas por pulso, las not
   Melodía: F4q A4q C5q E5q | D5h B4q G4q | …
   ```
 
-  Las repeticiones y los saltos se escriben dentro de los compases, como en *Escribir acordes*: `|: Segno Dm7 | 1. G7 x3 :| 2. C Fine |`.
+  Las repeticiones y los saltos se escriben dentro de los compases, como en *Escribir acordes*: `||: Segno Dm7 | 1. G7 x3 :|| 2. C Fine |`.
 
   En la melodía: nota, alteración (`#`, `b`), octava (C4 es el do central) y figura (`w` redonda, `h` blanca, `q` negra, `e` corchea, `s` semicorchea), `.` para el puntillo y `~` para ligar con la siguiente; `rq` es un silencio de negra.
 
