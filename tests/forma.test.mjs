@@ -207,26 +207,33 @@ await part('Texto', { width: 1280, height: 900 }, async (b, E) => {
     P.marks=cleanMarks([{b:0,rs:true,segno:true},{b:2,v:1,re:3},{b:3,v:2,tocoda:true},{b:4,fine:true},{b:5,go:'ds',al:'coda'},{b:6,coda:true}]); renderAll()`);
   const txt = await E('exportText(P)');
   const rows = txt.split('\n').filter(l => l.startsWith('|'));
-  ok(rows[0] === '|: Segno Dm7 | G7 | 1. Cmaj7 x3 :| 2. A7 Al Coda |', 'primera fila con «|:», Segno, casillas y «x3 :|»', rows[0]);
+  ok(rows[0] === '||: Segno Dm7 | G7 | 1. Cmaj7 x3 :|| 2. A7 Al Coda |', 'primera fila con «||:», Segno, casillas y «x3 :||»', rows[0]);
   ok(rows[1] === '| Dm7 G7 Fine | C D.S. al Coda | Coda Fm6 | C |', 'segunda fila con Fine, D.S. al Coda y Coda', rows[1]);
   // ida y vuelta
   ok(await E(`(()=>{ const q=importText(exportText(P)); return JSON.stringify(q.marks)===JSON.stringify(P.marks) && q.chords.map(chordText).join()===P.chords.map(chordText).join(); })()`), 'ida y vuelta por texto: mismas marcas y acordes', await E('JSON.stringify(importText(exportText(P)).marks)'));
   ok(await E(`(()=>{ const q={...P,marks:[]}; return exportText(q).split('\\n').filter(l=>l.startsWith('|')).join(' / '); })()`) === '| Dm7 | G7 | Cmaj7 | A7 | / | Dm7 G7 | C | Fm6 | C |', 'sin marcas, el texto queda como antes');
   // compases sin acordes al final, con marcas: se escriben y no alargan el último acorde
   ok(await E(`(()=>{ const q={...newPage('x'),chords:parseChordBars('| C | G |',SIGS['4/4'],48),notes:parseMelody('C4w | D4w | E4w | F4w | G4w'),marks:cleanMarks([{b:1,re:2},{b:4,fine:true}])};
-    const t=exportText(q), r=importText(t); return t.includes('| C | G :| | |\\n| Fine |') && JSON.stringify(r.marks)===JSON.stringify(q.marks) && r.chords.map(chordText).join()==='C,G' && sumD(r.chords)===96; })()`), 'marcas en compases de solo melodía: ida y vuelta sin alargar acordes', await E(`exportText({...newPage('x'),chords:parseChordBars('| C | G |',SIGS['4/4'],48),notes:[],marks:cleanMarks([{b:1,re:2},{b:4,fine:true}])})`));
+    const t=exportText(q), r=importText(t); return t.includes('| C | G :|| | |\\n| Fine |') && JSON.stringify(r.marks)===JSON.stringify(q.marks) && r.chords.map(chordText).join()==='C,G' && sumD(r.chords)===96; })()`), 'marcas en compases de solo melodía: ida y vuelta sin alargar acordes', await E(`exportText({...newPage('x'),chords:parseChordBars('| C | G |',SIGS['4/4'],48),notes:[],marks:cleanMarks([{b:1,re:2},{b:4,fine:true}])})`));
   ok(await E(`sumD(parseChordBars('| C | |',SIGS['4/4'],48,0,true))`) === 96, 'sin marcas, un compás vacío al final sigue alargando el acorde');
   // importar a mano, con otras grafías
   const imp = async t => E(`(()=>{ try{ return JSON.stringify(importText(${JSON.stringify(t)}).marks); }catch(e){ return 'ERR '+e.message; } })()`);
+  // retornelos con doble barra: «:||:» seguidos, al final de una fila y al principio de la siguiente, y la forma corta de antes
+  await E(`P.chords=parseChordBars('| C | F | G | C | D | E |',SIGS['4/4'],48); P.marks=cleanMarks([{b:0,rs:true},{b:1,re:2},{b:2,rs:true},{b:3,re:3},{b:4,rs:true},{b:5,re:2}])`);
+  const rows2 = (await E('exportText(P)')).split('\n').filter(l => l.startsWith('|'));
+  ok(rows2.join(' / ') === '||: C | F :||: G | C x3 :|| / ||: D | E :||', '«:||:» seguidos y retornelos al cambiar de fila', rows2);
+  ok(await E(`JSON.stringify(importText(exportText(P)).marks)===JSON.stringify(P.marks) && importText(exportText(P)).chords.length===6`), 'y vuelven igual al importarlos');
+  ok(await imp('|: C | F :|\n|: G | C :|') === await imp('||: C | F :||\n||: G | C :||'), 'la forma corta «|:» «:|» sigue valiendo (textos y enlaces de antes)');
+  ok(await E(`importText('Título: A:||B ||: x\\n| C |').title`) === 'A:||B ||: x', 'el título no se toca');
   ok(await imp('|: C | F x2 :|\n| G | d.c. al fine |') === '[{"b":0,"rs":true},{"b":1,"re":2},{"b":3,"go":"dc","al":"fine"}]', 'minúsculas y un compás solo con el salto', await imp('|: C | F x2 :|\n| G | d.c. al fine |'));
   ok(await imp('| 𝄋 C | G7 al coda | D.S. | 𝄌 F |') === '[{"b":0,"segno":true},{"b":1,"tocoda":true},{"b":2,"go":"ds","al":""},{"b":3,"coda":true}]', 'glifos 𝄋 y 𝄌 y «al coda»', await imp('| 𝄋 C | G7 al coda | D.S. | 𝄌 F |'));
-  ok(await imp('| C x3 | G |') === 'ERR «x3» va con «:|», al final de la repetición', '«x3» sin «:|» da un error claro', await imp('| C x3 | G |'));
+  ok(await imp('| C x3 | G |') === 'ERR «x3» va con «:||», al final de la repetición', '«x3» sin «:||» da un error claro', await imp('| C x3 | G |'));
   ok((await imp('| C x9 :|')).startsWith('ERR No entiendo el acorde «x9»'), '«x9» no vale', await imp('| C x9 :|'));
   ok(await imp('| Segno C | Segno G |') === '[{"b":0,"segno":true}]', 'dos Segno: vale el primero');
   // escribir acordes con marcas en medio de la página
   await E(`P.chords=parseChordBars('| C | F |',SIGS['4/4'],48); P.marks=[]; ed.cs=1; renderAll()`);
-  await E(`document.querySelector('#wIn').value='|: Dm7 | G7 :|'; document.querySelector('#wForm').requestSubmit()`);
-  ok(await E('JSON.stringify(P.marks)') === '[{"b":2,"rs":true},{"b":3,"re":2}]', 'escribir «|: Dm7 | G7 :|» pone las marcas en sus compases', await E('JSON.stringify(P.marks)'));
+  await E(`document.querySelector('#wIn').value='||: Dm7 | G7 :||'; document.querySelector('#wForm').requestSubmit()`);
+  ok(await E('JSON.stringify(P.marks)') === '[{"b":2,"rs":true},{"b":3,"re":2}]', 'escribir «||: Dm7 | G7 :||» pone las marcas en sus compases', await E('JSON.stringify(P.marks)'));
   await E('undo()'); ok(await E('P.marks.length') === 0 && await E('P.chords.length') === 2, 'deshacer quita acordes y marcas a la vez');
   await E(`P.marks=cleanMarks([{b:0,fine:true}]); ed.cs=1; document.querySelector('#wIn').value='| G | C Fine |'; document.querySelector('#wForm').requestSubmit()`);
   ok(await E('JSON.stringify(P.marks)') === '[{"b":3,"fine":true}]', 'el Fine escrito sustituye al que había', await E('JSON.stringify(P.marks)'));
